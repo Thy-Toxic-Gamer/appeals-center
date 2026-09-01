@@ -2,6 +2,38 @@ function staffStatusLabel(status) {
   return String(status || "").replaceAll("_", " ");
 }
 
+let staffHistoryRefreshTimer = null;
+let staffHistoryPollTimer = null;
+
+function queueStaffHistoryRefresh(caseId, delay = 700) {
+  window.clearTimeout(staffHistoryRefreshTimer);
+  staffHistoryRefreshTimer = window.setTimeout(() => {
+    const dialog = document.querySelector("#staff-case-dialog");
+    if (dialog?.open && selectedStaffCase?.id === caseId) loadStaffHistory(caseId);
+  }, delay);
+}
+
+function startStaffHistoryPolling(caseId) {
+  window.clearInterval(staffHistoryPollTimer);
+  staffHistoryPollTimer = window.setInterval(() => {
+    const dialog = document.querySelector("#staff-case-dialog");
+    if (dialog?.open && selectedStaffCase?.id === caseId) loadStaffHistory(caseId);
+  }, 8000);
+}
+
+function stopStaffHistoryRefresh() {
+  window.clearTimeout(staffHistoryRefreshTimer);
+  window.clearInterval(staffHistoryPollTimer);
+}
+
+function prependStaffHistory(containerSelector, title, body) {
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+  const loadingOrEmpty = container.querySelector(".loading-state, .empty-state");
+  if (loadingOrEmpty) container.innerHTML = "";
+  container.insertAdjacentHTML("afterbegin", `<article class="is-new"><div><strong>${escapeText(title)}</strong><time>Just now</time></div><p>${escapeText(body)}</p></article>`);
+}
+
 async function advancedLoadStaffCases() {
   const results = document.querySelector("#staff-results");
   if (!results) return;
@@ -73,6 +105,7 @@ async function openStaffCase(caseId) {
   document.querySelector("#staff-activity").innerHTML = '<div class="loading-state">Loading case activity…</div>';
   dialog.showModal();
   await loadStaffHistory(caseId);
+  startStaffHistoryPolling(caseId);
 }
 
 async function loadStaffHistory(caseId) {
@@ -110,11 +143,16 @@ async function saveStaffCase(event) {
   button.textContent = "Saving…";
   message.hidden = true;
 
+  const nextStatus = formData.get("status")?.toString();
+  const publicUpdate = formData.get("public_update")?.toString().trim() || null;
+  const decisionReason = formData.get("decision_reason")?.toString().trim() || null;
+  const previousStatus = selectedStaffCase.status;
+  const caseId = selectedStaffCase.id;
   const { error } = await database.rpc("staff_manage_case", {
-    p_case_id: selectedStaffCase.id,
-    p_status: formData.get("status"),
-    p_public_update: formData.get("public_update")?.toString().trim() || null,
-    p_decision_reason: formData.get("decision_reason")?.toString().trim() || null
+    p_case_id: caseId,
+    p_status: nextStatus,
+    p_public_update: publicUpdate,
+    p_decision_reason: decisionReason
   });
 
   button.disabled = false;
@@ -129,11 +167,18 @@ async function saveStaffCase(event) {
   message.textContent = "Case update saved. The applicant status page is updated.";
   message.classList.remove("is-error");
   message.hidden = false;
+  selectedStaffCase.status = nextStatus;
+  selectedStaffCase.applicant_update = publicUpdate;
+  selectedStaffCase.decision_reason = decisionReason;
+  document.querySelector("#staff-case-details [data-status]")?.setAttribute("data-status", nextStatus);
+  const dialogStatus = document.querySelector("#staff-case-details [data-status]");
+  if (dialogStatus) dialogStatus.textContent = staffStatusLabel(nextStatus);
+  prependStaffHistory("#staff-activity", "case status updated", `${staffStatusLabel(previousStatus)} → ${staffStatusLabel(nextStatus)}${publicUpdate ? ` · ${publicUpdate}` : ""}`);
   await advancedLoadStaffCases();
-  selectedStaffCase = staffCases.get(selectedStaffCase.id);
+  selectedStaffCase = staffCases.get(caseId);
   if (selectedStaffCase) {
     document.querySelector("#staff-case-status").value = selectedStaffCase.status;
-    await loadStaffHistory(selectedStaffCase.id);
+    queueStaffHistoryRefresh(caseId);
   }
 }
 
@@ -141,6 +186,8 @@ async function addPrivateStaffNote(event) {
   event.preventDefault();
   if (!selectedStaffCase) return;
   const formData = new FormData(event.currentTarget);
+  const noteText = formData.get("note")?.toString().trim();
+  const caseId = selectedStaffCase.id;
   const button = event.currentTarget.querySelector("button[type='submit']");
   const message = document.querySelector("#staff-note-message");
   button.disabled = true;
@@ -148,8 +195,8 @@ async function addPrivateStaffNote(event) {
   message.hidden = true;
 
   const { error } = await database.rpc("add_staff_note", {
-    p_case_id: selectedStaffCase.id,
-    p_note: formData.get("note")?.toString().trim()
+    p_case_id: caseId,
+    p_note: noteText
   });
 
   button.disabled = false;
@@ -165,7 +212,9 @@ async function addPrivateStaffNote(event) {
   message.textContent = "Private note saved.";
   message.classList.remove("is-error");
   message.hidden = false;
-  await loadStaffHistory(selectedStaffCase.id);
+  prependStaffHistory("#staff-notes", "Private note", noteText);
+  prependStaffHistory("#staff-activity", "staff note added", "Internal staff activity");
+  queueStaffHistoryRefresh(caseId);
 }
 
 document.querySelector("#staff-results")?.addEventListener("click", (event) => {
@@ -175,7 +224,9 @@ document.querySelector("#staff-results")?.addEventListener("click", (event) => {
 document.querySelector("#staff-case-form")?.addEventListener("submit", saveStaffCase);
 document.querySelector("#staff-note-form")?.addEventListener("submit", addPrivateStaffNote);
 document.querySelector("[data-close-staff-dialog]")?.addEventListener("click", () => {
+  stopStaffHistoryRefresh();
   document.querySelector("#staff-case-dialog")?.close();
 });
+document.querySelector("#staff-case-dialog")?.addEventListener("close", stopStaffHistoryRefresh);
 
 advancedLoadStaffCases();
