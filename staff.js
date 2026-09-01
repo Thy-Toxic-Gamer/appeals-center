@@ -271,6 +271,8 @@ async function deleteSelectedTestTicket() {
     return;
   }
 
+  button.disabled = false;
+  button.textContent = "Delete Test Ticket";
   stopStaffHistoryRefresh();
   document.querySelector("#staff-case-dialog")?.close();
   selectedStaffCase = null;
