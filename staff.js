@@ -96,7 +96,13 @@ async function openStaffCase(caseId) {
 
   document.querySelector("#staff-decision-panel").hidden = !["admin", "owner"].includes(currentStaffRole);
   document.querySelector("#test-ticket-actions").hidden = !(currentStaffRole === "owner" && submission.is_test);
-  document.querySelector("#test-ticket-message").hidden = true;
+  const deleteTestButton = document.querySelector("#delete-test-ticket");
+  deleteTestButton.disabled = false;
+  deleteTestButton.textContent = "Delete Test Ticket";
+  const testTicketMessage = document.querySelector("#test-ticket-message");
+  testTicketMessage.hidden = true;
+  testTicketMessage.textContent = "";
+  testTicketMessage.classList.remove("is-error");
   document.querySelector("#staff-case-status").value = item.status;
   document.querySelector("#staff-public-update").value = item.applicant_update || "";
   document.querySelector("#staff-decision-reason").value = item.decision_reason || "";
