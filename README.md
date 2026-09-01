@@ -21,8 +21,9 @@ Run the SQL files in numerical order when setting up a new Supabase project:
 3. `003_live_appeals.sql`
 4. `004_rename_overseer_to_admin.sql`
 5. `005_staff_case_controls.sql`
+6. `006_owner_test_tickets.sql`
 
-Closed-case data is automatically removed after six months by a daily Supabase Cron job. Discord notifications and direct evidence uploads are the next implementation phase.
+Closed-case data is automatically removed after six months by a daily Supabase Cron job. The Owner can create and permanently remove clearly marked test tickets from Staff Review; real appeals never expose that delete control. Discord notifications and direct evidence uploads are the next implementation phase.
 
 ## Site
 
