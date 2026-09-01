@@ -1,5 +1,3 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
-
 type AppealLog = {
   case_id: string;
   event_type: string;
@@ -148,21 +146,27 @@ Deno.serve(async (request) => {
       return Response.json({ ignored: true });
     }
 
-    const admin = createClient(projectUrl!, adminKey!, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
     const log = payload.record;
-    const { data: caseData, error: caseError } = await admin
-      .from("appeal_cases")
-      .select("case_number, platform, action_type, status, appeal_submissions(submission_number, is_test)")
-      .eq("id", log.case_id)
-      .single();
+    const caseUrl = new URL(`${projectUrl}/rest/v1/appeal_cases`);
+    caseUrl.searchParams.set(
+      "select",
+      "case_number,platform,action_type,status,appeal_submissions(submission_number,is_test)",
+    );
+    caseUrl.searchParams.set("id", `eq.${log.case_id}`);
 
-    if (caseError || !caseData) {
-      throw new Error(`Database lookup failed: ${caseError?.message || "Appeal case could not be loaded."}`);
+    const caseResponse = await fetch(caseUrl, {
+      headers: {
+        apikey: adminKey!,
+        Accept: "application/vnd.pgrst.object+json",
+      },
+    });
+
+    if (!caseResponse.ok) {
+      const databaseError = (await caseResponse.text()).slice(0, 500);
+      throw new Error(`Database lookup failed (${caseResponse.status}): ${databaseError}`);
     }
 
-    const appealCase = caseData as unknown as CaseRecord;
+    const appealCase = (await caseResponse.json()) as CaseRecord;
     const submission = getSubmission(appealCase);
     const isTest = Boolean(submission?.is_test);
     const platform = platformNames[appealCase.platform] || titleCase(appealCase.platform);
