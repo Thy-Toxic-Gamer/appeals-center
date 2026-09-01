@@ -18,6 +18,9 @@ let currentSession = null;
 let appealMode = "individual";
 let selectedPlatforms = [];
 let pendingAppeal = null;
+let currentStaffRole = null;
+let selectedStaffCase = null;
+let staffCases = new Map();
 
 const form = document.querySelector("#appeal-form");
 const modeButtons = [...document.querySelectorAll("[data-mode]")];
@@ -30,6 +33,16 @@ function escapeText(value) {
   const element = document.createElement("span");
   element.textContent = String(value ?? "");
   return element.innerHTML;
+}
+
+function safeExternalUrl(value) {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
 function cleanError(error) {
@@ -252,7 +265,7 @@ async function loadApplicantCases() {
   results.innerHTML = '<div class="loading-state">Loading your appeals…</div>';
   const { data, error } = await database
     .from("appeal_submissions")
-    .select("id, submission_number, appeal_mode, created_at, appeal_cases(id, case_number, platform, action_type, status, applicant_update, created_at)")
+    .select("id, submission_number, appeal_mode, created_at, appeal_cases(id, case_number, platform, action_type, status, applicant_update, decision_reason, created_at)")
     .order("created_at", { ascending: false });
   if (error) {
     results.innerHTML = `<p class="inline-message is-error">${escapeText(cleanError(error))}</p>`;
@@ -264,7 +277,7 @@ async function loadApplicantCases() {
   }
   results.innerHTML = data.map((submission) => `<article class="submission-card">
     <div class="submission-heading"><div><span>${escapeText(submission.submission_number)}</span><small>${escapeText(submission.appeal_mode)} appeal · ${new Date(submission.created_at).toLocaleDateString()}</small></div><b>${submission.appeal_cases.length} ${submission.appeal_cases.length === 1 ? "case" : "cases"}</b></div>
-    <div class="case-list">${submission.appeal_cases.map((item) => `<div class="status-case" style="--case-color:${platformConfig[item.platform]?.color || "#a8f000"}"><div><strong>${escapeText(item.case_number)}</strong><small>${escapeText(platformConfig[item.platform]?.name || item.platform)} · ${escapeText(item.action_type)}</small></div><span data-status="${escapeText(item.status)}">${escapeText(item.status.replaceAll("_", " "))}</span>${item.applicant_update ? `<p>${escapeText(item.applicant_update)}</p>` : ""}</div>`).join("")}</div>
+    <div class="case-list">${submission.appeal_cases.map((item) => `<div class="status-case" style="--case-color:${platformConfig[item.platform]?.color || "#a8f000"}"><div><strong>${escapeText(item.case_number)}</strong><small>${escapeText(platformConfig[item.platform]?.name || item.platform)} · ${escapeText(item.action_type)}</small></div><span data-status="${escapeText(item.status)}">${escapeText(item.status.replaceAll("_", " "))}</span>${item.applicant_update ? `<p>${escapeText(item.applicant_update)}</p>` : ""}${item.decision_reason ? `<p><strong>Decision:</strong> ${escapeText(item.decision_reason)}</p>` : ""}</div>`).join("")}</div>
   </article>`).join("");
 }
 
