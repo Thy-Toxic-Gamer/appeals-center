@@ -61,23 +61,23 @@ function getSubmission(record: CaseRecord) {
 }
 
 function getSupabaseAdminKey() {
-  const legacyKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (legacyKey) return legacyKey;
-
   const secretKeysJson = Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (!secretKeysJson) return null;
+  if (secretKeysJson) {
+    try {
+      const secretKeys = JSON.parse(secretKeysJson) as Record<string, unknown>;
+      const defaultKey = secretKeys.default;
+      if (typeof defaultKey === "string" && defaultKey) return defaultKey;
 
-  try {
-    const secretKeys = JSON.parse(secretKeysJson) as Record<string, unknown>;
-    const defaultKey = secretKeys.default;
-    if (typeof defaultKey === "string" && defaultKey) return defaultKey;
-
-    return Object.values(secretKeys).find(
-      (value): value is string => typeof value === "string" && value.length > 0,
-    ) ?? null;
-  } catch {
-    throw new Error("SUPABASE_SECRET_KEYS is not valid JSON.");
+      const firstNamedKey = Object.values(secretKeys).find(
+        (value): value is string => typeof value === "string" && value.length > 0,
+      );
+      if (firstNamedKey) return firstNamedKey;
+    } catch {
+      throw new Error("SUPABASE_SECRET_KEYS is not valid JSON.");
+    }
   }
+
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || null;
 }
 
 function safeErrorMessage(error: unknown) {
