@@ -23,7 +23,16 @@ Run the SQL files in numerical order when setting up a new Supabase project:
 5. `005_staff_case_controls.sql`
 6. `006_owner_test_tickets.sql`
 
-Closed-case data is automatically removed after six months by a daily Supabase Cron job. The Owner can create and permanently remove clearly marked test tickets from Staff Review; real appeals never expose that delete control. Discord notifications and direct evidence uploads are the next implementation phase.
+Closed-case data is automatically removed after six months by a daily Supabase Cron job. The Owner can create and permanently remove clearly marked test tickets from Staff Review; real appeals never expose that delete control.
+
+## Discord notifications
+
+The `discord-appeal-events` Supabase Edge Function sends new appeals and public case updates to the private `#⚖️・appeals` channel and sends the complete staff audit stream to the private `#⚖️・appeal-logs` channel. Discord webhook URLs are stored only as Supabase Edge Function secrets:
+
+- `DISCORD_APPEALS_WEBHOOK_URL`
+- `DISCORD_APPEAL_LOGS_WEBHOOK_URL`
+
+Create one Supabase Database Webhook on `public.appeal_logs` for the `INSERT` event and point it to the `discord-appeal-events` Edge Function. Use the dashboard option to add an authentication header with a project secret key. Direct evidence uploads are the next implementation phase.
 
 ## Site
 
