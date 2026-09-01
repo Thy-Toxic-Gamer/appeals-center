@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="supabase-config.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -18,19 +20,34 @@
       <a class="brand" href="index.html"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS CENTER</small></a>
       <nav aria-label="Primary navigation"><a href="index.html">Public Appeals</a><a href="status.html">Check Status</a></nav>
     </header>
-    <main class="utility-page">
-      <section class="utility-card staff-card" aria-labelledby="staff-title">
+    <main class="dashboard-page">
+      <section class="utility-card dashboard-card staff-card" aria-labelledby="staff-title">
         <p class="section-number">PROTECTED AREA</p>
         <h1 id="staff-title">Staff Review</h1>
-        <p>This area will be restricted to approved ThyToxicGamer staff. Public applicants will never see staff notes, internal evidence, or moderation history.</p>
-        <div class="setup-notice"><span>ACCESS LOCKED</span><p>Staff authentication and permissions will be connected with the appeal database.</p></div>
+        <p>This area is restricted to approved ⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆ staff. Applicants cannot see staff notes, internal evidence, or private moderation history.</p>
         <div class="role-grid">
           <article><strong>Owner</strong><p>Complete access, final decisions, staff permissions, and case administration.</p></article>
           <article><strong>Overseer</strong><p>Review cases, request information, add private notes, approve, deny, and close appeals.</p></article>
           <article><strong>Moderator</strong><p>Review assigned cases, provide evidence, and add recommendations without changing protected settings.</p></article>
         </div>
-        <button class="button button-primary" id="staff-login" type="button">Staff Sign In <span aria-hidden="true">→</span></button>
-        <p class="inline-message" id="staff-message" hidden>Secure staff sign-in is not connected yet.</p>
+        <section class="account-panel compact-account" aria-label="Staff account access">
+          <div data-auth-signed-out>
+            <div class="account-copy"><h3>Verified staff sign-in</h3><p>Sign in with the Twitch or email account assigned to your staff role.</p></div>
+            <div class="auth-actions">
+              <button class="button twitch-button" type="button" data-twitch-sign-in>Sign in with Twitch <span aria-hidden="true">↗</span></button>
+              <details class="email-backup"><summary>Use staff email instead</summary><form data-email-sign-in><label><span>Email address</span><input name="email" type="email" autocomplete="email" required></label><button class="button button-secondary" type="submit">Send Sign-In Link</button></form></details>
+            </div>
+          </div>
+          <div class="signed-in-card" data-auth-signed-in hidden>
+            <img data-auth-avatar hidden alt="">
+            <div><small data-auth-provider></small><strong data-auth-name></strong><span data-auth-username></span></div>
+            <button class="text-button" type="button" data-sign-out>Sign out</button>
+          </div>
+          <p class="auth-message" data-auth-message hidden></p>
+        </section>
+        <section class="results-list staff-results" id="staff-results" aria-live="polite">
+          <div class="loading-state">Loading secure account…</div>
+        </section>
       </section>
     </main>
     <footer class="site-footer"><div class="footer-brand"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS CENTER</small></div><p>Authorized staff only.</p><span>© <b data-current-year></b></span></footer>
