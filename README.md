@@ -27,14 +27,15 @@ Closed-case data is automatically removed after six months by a daily Supabase C
 
 ## Discord notifications
 
-The authenticated `discord-appeal-events` Supabase Edge Function sends minimal alerts to the private staff channels. Discord receives only the case number, submission number, platform, action, status, event type, and protected Staff Review link. Applicant identity, explanations, evidence, messages, decision reasons, and private-note contents remain in the Appeals Center.
+The secret-authenticated `discord-appeal-events` Supabase Edge Function sends minimal alerts to the private staff channels. Discord receives only the case number, submission number, platform, action, status, event type, and protected Staff Review link. Applicant identity, explanations, evidence, messages, decision reasons, and private-note contents remain in the Appeals Center.
 
 Store the two Discord webhook URLs only as Supabase Edge Function secrets:
 
 - `DISCORD_APPEALS_WEBHOOK_URL`
 - `DISCORD_APPEAL_LOGS_WEBHOOK_URL`
+- `DATABASE_WEBHOOK_SECRET`
 
-Create one Supabase Database Webhook on `public.appeal_logs` for `INSERT`, point it to `discord-appeal-events`, and use the dashboard option to add the service-key authentication header. Direct evidence uploads are the next implementation phase.
+Create one Supabase Database Webhook on `public.appeal_logs` for `INSERT`, point it to `discord-appeal-events`, and send `Authorization: Bearer <DATABASE_WEBHOOK_SECRET>`. The dedicated secret grants no database access and is checked by the function before any work occurs. Direct evidence uploads are the next implementation phase.
 
 ## Site
 
