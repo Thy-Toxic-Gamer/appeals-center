@@ -12,7 +12,7 @@ Universal moderation appeal and case-tracking center for the ThyToxicGamer commu
 
 ## Current phase
 
-Twitch OAuth and passwordless email backup are connected through Supabase. Authenticated applicants can submit individual or Universal Appeals and privately track every resulting case. The protected staff queue respects Owner, Admin, and Moderator database roles.
+Twitch OAuth and passwordless email backup are connected through Supabase. Authenticated applicants can submit individual or Universal Appeals and privately track every resulting case. The protected staff queue supports Owner/Admin decisions, applicant-visible updates, Moderator notes, and audit history.
 
 Run the SQL files in numerical order when setting up a new Supabase project:
 
@@ -20,8 +20,9 @@ Run the SQL files in numerical order when setting up a new Supabase project:
 2. `002_security_policies.sql`
 3. `003_live_appeals.sql`
 4. `004_rename_overseer_to_admin.sql`
+5. `005_staff_case_controls.sql`
 
-Closed-case data is automatically removed after six months by a daily Supabase Cron job. Discord notifications, evidence uploads, and full staff case actions are the next implementation phase.
+Closed-case data is automatically removed after six months by a daily Supabase Cron job. Discord notifications and direct evidence uploads are the next implementation phase.
 
 ## Site
 
