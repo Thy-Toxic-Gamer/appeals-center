@@ -13,6 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
   <script src="app.js" defer></script>
+  <script src="staff.js" defer></script>
 </head>
 <body>
   <div class="site-shell">
@@ -52,5 +53,48 @@
     </main>
     <footer class="site-footer"><div class="footer-brand"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS CENTER</small></div><p>Authorized staff only.</p><span>© <b data-current-year></b></span></footer>
   </div>
+
+  <dialog class="staff-case-dialog" id="staff-case-dialog">
+    <button class="dialog-close" type="button" data-close-staff-dialog aria-label="Close case">×</button>
+    <p class="section-number">STAFF CASE REVIEW</p>
+    <div id="staff-case-details"></div>
+
+    <section class="staff-action-panel" id="staff-decision-panel">
+      <div class="panel-heading"><div><span>Case decision</span><small>Owner and Admin controls</small></div></div>
+      <form id="staff-case-form">
+        <div class="field-grid two-column">
+          <label><span>Case status</span>
+            <select name="status" id="staff-case-status" required>
+              <option value="submitted">Submitted</option>
+              <option value="under_review">Under Review</option>
+              <option value="needs_information">Needs Information</option>
+              <option value="approved">Approved</option>
+              <option value="denied">Denied</option>
+              <option value="closed">Closed</option>
+            </select>
+          </label>
+          <label><span>Decision reason</span><textarea name="decision_reason" id="staff-decision-reason" rows="4" maxlength="3000" placeholder="Required when approving or denying"></textarea></label>
+        </div>
+        <label><span>Applicant-visible update</span><textarea name="public_update" id="staff-public-update" rows="4" maxlength="3000" placeholder="This message appears on the applicant's status page"></textarea></label>
+        <button class="button button-primary" type="submit">Save Case Update <span aria-hidden="true">→</span></button>
+        <p class="staff-form-message" id="staff-case-message" hidden></p>
+      </form>
+    </section>
+
+    <section class="staff-action-panel">
+      <div class="panel-heading"><div><span>Private staff notes</span><small>Never visible to applicants</small></div></div>
+      <form id="staff-note-form">
+        <label><span>Add private note</span><textarea name="note" rows="4" maxlength="3000" placeholder="Evidence, recommendations, or internal context" required></textarea></label>
+        <button class="button button-secondary" type="submit">Add Private Note</button>
+        <p class="staff-form-message" id="staff-note-message" hidden></p>
+      </form>
+      <div class="staff-history" id="staff-notes"></div>
+    </section>
+
+    <section class="staff-action-panel">
+      <div class="panel-heading"><div><span>Case activity</span><small>Permanent audit trail until scheduled retention</small></div></div>
+      <div class="staff-history" id="staff-activity"></div>
+    </section>
+  </dialog>
 </body>
 </html>
