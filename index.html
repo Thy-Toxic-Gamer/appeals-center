@@ -15,6 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="supabase-config.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -60,12 +62,33 @@
           <p>Select one location for an Individual Appeal or several locations for a Universal Appeal.</p>
         </div>
 
-        <div class="setup-notice" role="status">
-          <span>SETUP PHASE</span>
-          <p>The interface is ready for review. Secure email sign-in and permanent submissions will be connected next.</p>
-        </div>
+        <section class="account-panel" id="account-access" aria-labelledby="account-title">
+          <div data-auth-signed-out>
+            <div class="account-copy">
+              <p class="section-number">SECURE ACCOUNT</p>
+              <h3 id="account-title">Sign in before you appeal</h3>
+              <p>Twitch is the primary sign-in and automatically verifies your Twitch identity. Email is available as a backup.</p>
+            </div>
+            <div class="auth-actions">
+              <button class="button twitch-button" type="button" data-twitch-sign-in>Sign in with Twitch <span aria-hidden="true">↗</span></button>
+              <details class="email-backup">
+                <summary>Use email instead</summary>
+                <form data-email-sign-in>
+                  <label><span>Email address</span><input name="email" type="email" autocomplete="email" placeholder="name@example.com" required></label>
+                  <button class="button button-secondary" type="submit">Send Sign-In Link</button>
+                </form>
+              </details>
+            </div>
+          </div>
+          <div class="signed-in-card" data-auth-signed-in hidden>
+            <img data-auth-avatar hidden alt="">
+            <div><small data-auth-provider></small><strong data-auth-name></strong><span data-auth-username></span></div>
+            <button class="text-button" type="button" data-sign-out>Sign out</button>
+          </div>
+          <p class="auth-message" data-auth-message hidden></p>
+        </section>
 
-        <form class="appeal-form" id="appeal-form" novalidate>
+        <form class="appeal-form" id="appeal-form" data-auth-required novalidate>
           <fieldset class="form-block mode-block">
             <legend>Appeal type</legend>
             <div class="mode-grid">
@@ -96,10 +119,9 @@
 
           <div class="form-block identity-block">
             <div class="form-block-heading">
-              <div><span>Applicant information</span><small>Your email will be used for secure sign-in and appeal updates.</small></div>
+              <div><span>Applicant information</span><small>Your verified account stays linked to every case in this appeal.</small></div>
             </div>
-            <div class="field-grid two-column">
-              <label><span>Email address</span><input id="email" name="email" type="email" autocomplete="email" placeholder="name@example.com" required></label>
+            <div class="field-grid">
               <label><span>Preferred display name</span><input id="display-name" name="display_name" type="text" autocomplete="nickname" maxlength="60" placeholder="How staff should address you" required></label>
             </div>
           </div>
@@ -122,7 +144,7 @@
           </div>
 
           <div class="form-actions">
-            <p><strong>Not submitted yet.</strong> Review mode lets you confirm the case structure before secure storage is connected.</p>
+            <p><strong>Secure submission.</strong> You will review the cases once more before anything is saved.</p>
             <button class="button button-primary" type="submit">Review Appeal <span aria-hidden="true">→</span></button>
           </div>
         </form>
@@ -154,8 +176,13 @@
     <p class="section-number">APPEAL PREVIEW</p>
     <h2>Review your case structure</h2>
     <div id="review-content"></div>
-    <div class="dialog-notice"><strong>This preview was not submitted.</strong><p>Secure email sign-in and permanent appeal storage must be connected before submissions can open.</p></div>
-    <button class="button button-secondary" type="button" data-close-dialog>Return to Form</button>
+    <div class="dialog-notice"><strong>Final check</strong><p>Submitting creates a separate case and decision for every selected platform.</p></div>
+    <p class="submit-result" id="submit-result" hidden></p>
+    <div class="dialog-actions">
+      <button class="button button-secondary" type="button" data-close-dialog>Return to Form</button>
+      <button class="button button-primary" id="submit-reviewed-appeal" type="button">Submit Appeal <span aria-hidden="true">→</span></button>
+      <a class="button button-secondary" href="status.html">View My Appeals</a>
+    </div>
   </dialog>
 </body>
 </html>
