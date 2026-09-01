@@ -83,14 +83,15 @@ Deno.serve(async (request) => {
 
   const projectUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const databaseWebhookSecret = Deno.env.get("DATABASE_WEBHOOK_SECRET");
   const appealsWebhook = Deno.env.get("DISCORD_APPEALS_WEBHOOK_URL");
   const logsWebhook = Deno.env.get("DISCORD_APPEAL_LOGS_WEBHOOK_URL");
   const authorization = request.headers.get("Authorization");
 
-  if (!serviceRoleKey || authorization !== `Bearer ${serviceRoleKey}`) {
+  if (!databaseWebhookSecret || authorization !== `Bearer ${databaseWebhookSecret}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!projectUrl || !appealsWebhook || !logsWebhook) {
+  if (!projectUrl || !serviceRoleKey || !appealsWebhook || !logsWebhook) {
     return Response.json({ error: "Required server secrets are not configured." }, { status: 500 });
   }
 
