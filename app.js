@@ -265,7 +265,7 @@ async function loadApplicantCases() {
   results.innerHTML = '<div class="loading-state">Loading your appeals…</div>';
   const { data, error } = await database
     .from("appeal_submissions")
-    .select("id, submission_number, appeal_mode, created_at, appeal_cases(id, case_number, platform, action_type, status, applicant_update, decision_reason, created_at)")
+    .select("id, submission_number, appeal_mode, is_test, created_at, appeal_cases(id, case_number, platform, action_type, status, applicant_update, decision_reason, created_at)")
     .order("created_at", { ascending: false });
   if (error) {
     results.innerHTML = `<p class="inline-message is-error">${escapeText(cleanError(error))}</p>`;
@@ -276,7 +276,7 @@ async function loadApplicantCases() {
     return;
   }
   results.innerHTML = data.map((submission) => `<article class="submission-card">
-    <div class="submission-heading"><div><span>${escapeText(submission.submission_number)}</span><small>${escapeText(submission.appeal_mode)} appeal · ${new Date(submission.created_at).toLocaleDateString()}</small></div><b>${submission.appeal_cases.length} ${submission.appeal_cases.length === 1 ? "case" : "cases"}</b></div>
+    <div class="submission-heading"><div><span>${escapeText(submission.submission_number)}${submission.is_test ? ' <b class="test-badge">TEST</b>' : ""}</span><small>${escapeText(submission.appeal_mode)} appeal · ${new Date(submission.created_at).toLocaleDateString()}</small></div><b>${submission.appeal_cases.length} ${submission.appeal_cases.length === 1 ? "case" : "cases"}</b></div>
     <div class="case-list">${submission.appeal_cases.map((item) => `<div class="status-case" style="--case-color:${platformConfig[item.platform]?.color || "#a8f000"}"><div><strong>${escapeText(item.case_number)}</strong><small>${escapeText(platformConfig[item.platform]?.name || item.platform)} · ${escapeText(item.action_type)}</small></div><span data-status="${escapeText(item.status)}">${escapeText(item.status.replaceAll("_", " "))}</span>${item.applicant_update ? `<p>${escapeText(item.applicant_update)}</p>` : ""}${item.decision_reason ? `<p><strong>Decision:</strong> ${escapeText(item.decision_reason)}</p>` : ""}</div>`).join("")}</div>
   </article>`).join("");
 }
