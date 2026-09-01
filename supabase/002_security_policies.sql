@@ -300,7 +300,7 @@ for update
 to authenticated
 using (
   author_id = auth.uid()
-  or public.current_staff_role() in ('overseer', 'owner')
+  or public.current_staff_role() in ('admin', 'owner')
 )
 with check (public.is_active_staff());
 
@@ -309,7 +309,7 @@ create policy staff_notes_delete_lead
 on public.staff_notes
 for delete
 to authenticated
-using (public.current_staff_role() in ('overseer', 'owner'));
+using (public.current_staff_role() in ('admin', 'owner'));
 
 drop policy if exists appeal_logs_select_public_or_staff on public.appeal_logs;
 create policy appeal_logs_select_public_or_staff
