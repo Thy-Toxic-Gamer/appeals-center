@@ -4,6 +4,36 @@ function staffStatusLabel(status) {
 
 let staffHistoryRefreshTimer = null;
 let staffHistoryPollTimer = null;
+let staffCaseData = [];
+let activeStaffView = window.location.hash === "#archive" ? "archive" : "open";
+
+function renderStaffCaseQueue() {
+  const results = document.querySelector("#staff-results");
+  if (!results || !currentStaffRole) return;
+
+  const openCases = staffCaseData.filter((item) => item.status !== "closed");
+  const archivedCases = staffCaseData.filter((item) => item.status === "closed");
+  const visibleCases = activeStaffView === "archive" ? archivedCases : openCases;
+  const emptyCopy = activeStaffView === "archive"
+    ? '<div class="empty-state"><strong>No archived cases</strong><p>Closed appeals will move here with their complete protected record.</p></div>'
+    : '<div class="empty-state"><strong>No cases in the queue</strong><p>New and active appeals will appear here.</p></div>';
+
+  results.innerHTML = `
+    <div class="staff-toolbar">
+      <div class="staff-role">Signed in as <strong>${escapeText(currentStaffRole)}</strong></div>
+      ${currentStaffRole === "owner" ? '<button class="button button-secondary" type="button" data-create-test-ticket>Create Test Ticket</button>' : ""}
+    </div>
+    <p class="staff-form-message" id="staff-test-message" hidden></p>
+    <div class="staff-view-tabs" role="tablist" aria-label="Appeal case lists">
+      <button type="button" role="tab" aria-selected="${activeStaffView === "open"}" class="${activeStaffView === "open" ? "is-active" : ""}" data-staff-view="open">Active Appeals <span>${openCases.length}</span></button>
+      <button type="button" role="tab" aria-selected="${activeStaffView === "archive"}" class="${activeStaffView === "archive" ? "is-active" : ""}" data-staff-view="archive">Archive <span>${archivedCases.length}</span></button>
+    </div>
+    <div class="staff-case-list">
+      ${visibleCases.length
+        ? visibleCases.map((item) => `<button class="staff-case-row${item.appeal_submissions?.is_test ? " is-test" : ""}${item.status === "closed" ? " is-archived" : ""}" type="button" data-open-staff-case="${escapeText(item.id)}"><div><strong>${escapeText(item.case_number)}${item.appeal_submissions?.is_test ? ' <b class="test-badge">TEST</b>' : ""}</strong><small>${escapeText(platformConfig[item.platform]?.name || item.platform)} · ${escapeText(item.action_type)} · @${escapeText(item.platform_username)}</small></div><span data-status="${escapeText(item.status)}">${escapeText(staffStatusLabel(item.status))}</span><em>${item.status === "closed" ? "View archive →" : "Open case →"}</em></button>`).join("")
+        : emptyCopy}
+    </div>`;
+}
 
 function queueStaffHistoryRefresh(caseId, delay = 700) {
   window.clearTimeout(staffHistoryRefreshTimer);
@@ -65,10 +95,9 @@ async function advancedLoadStaffCases() {
     return;
   }
 
-  staffCases = new Map((data || []).map((item) => [item.id, item]));
-  results.innerHTML = `<div class="staff-toolbar"><div class="staff-role">Signed in as <strong>${escapeText(role)}</strong></div>${role === "owner" ? '<button class="button button-secondary" type="button" data-create-test-ticket>Create Test Ticket</button>' : ""}</div><p class="staff-form-message" id="staff-test-message" hidden></p>${data?.length
-    ? data.map((item) => `<button class="staff-case-row${item.appeal_submissions?.is_test ? " is-test" : ""}" type="button" data-open-staff-case="${escapeText(item.id)}"><div><strong>${escapeText(item.case_number)}${item.appeal_submissions?.is_test ? ' <b class="test-badge">TEST</b>' : ""}</strong><small>${escapeText(platformConfig[item.platform]?.name || item.platform)} · ${escapeText(item.action_type)} · @${escapeText(item.platform_username)}</small></div><span data-status="${escapeText(item.status)}">${escapeText(staffStatusLabel(item.status))}</span><em>Open case →</em></button>`).join("")
-    : '<div class="empty-state"><strong>No cases in the queue</strong><p>New appeals will appear here.</p></div>'}`;
+  staffCaseData = data || [];
+  staffCases = new Map(staffCaseData.map((item) => [item.id, item]));
+  renderStaffCaseQueue();
 }
 
 loadStaffCases = advancedLoadStaffCases;
@@ -80,6 +109,7 @@ async function openStaffCase(caseId) {
 
   selectedStaffCase = item;
   const submission = item.appeal_submissions || {};
+  const isArchived = item.status === "closed";
   const profileUrl = safeExternalUrl(item.profile_url);
   const evidenceUrl = safeExternalUrl(submission.evidence_link);
   document.querySelector("#staff-case-details").innerHTML = `
@@ -90,11 +120,14 @@ async function openStaffCase(caseId) {
     <div class="staff-detail-grid">
       <article><small>Applicant</small><strong>${escapeText(submission.display_name || "Applicant")}</strong><p>@${escapeText(item.platform_username)}</p>${profileUrl ? `<a href="${escapeText(profileUrl)}" target="_blank" rel="noopener noreferrer">Open platform profile ↗</a>` : ""}</article>
       <article><small>Submission</small><strong>${escapeText(submission.submission_number || "")}</strong><p>${submission.incident_date ? `Incident: ${escapeText(submission.incident_date)}` : "Incident date not provided"}</p></article>
+      <article class="wide"><small>Case timeline</small><p>Opened: ${new Date(item.created_at).toLocaleString()}${item.closed_at ? ` · Closed: ${new Date(item.closed_at).toLocaleString()}` : " · Currently active"}${item.purge_after ? ` · Retained until: ${new Date(item.purge_after).toLocaleDateString()}` : ""}</p></article>
       <article class="wide"><small>Applicant explanation</small><p>${escapeText(submission.explanation || "No explanation provided.")}</p>${evidenceUrl ? `<a href="${escapeText(evidenceUrl)}" target="_blank" rel="noopener noreferrer">Open supporting evidence ↗</a>` : ""}</article>
       ${item.moderation_reason ? `<article class="wide"><small>Original moderation reason</small><p>${escapeText(item.moderation_reason)}</p></article>` : ""}
     </div>`;
 
-  document.querySelector("#staff-decision-panel").hidden = !["admin", "owner"].includes(currentStaffRole);
+  document.querySelector("#archive-case-notice").hidden = !isArchived;
+  document.querySelector("#staff-decision-panel").hidden = isArchived || !["admin", "owner"].includes(currentStaffRole);
+  document.querySelector("#staff-note-form").hidden = isArchived;
   document.querySelector("#test-ticket-actions").hidden = !(currentStaffRole === "owner" && submission.is_test);
   const deleteTestButton = document.querySelector("#delete-test-ticket");
   deleteTestButton.disabled = false;
@@ -182,6 +215,13 @@ async function saveStaffCase(event) {
   const dialogStatus = document.querySelector("#staff-case-details [data-status]");
   if (dialogStatus) dialogStatus.textContent = staffStatusLabel(nextStatus);
   prependStaffHistory("#staff-activity", "case status updated", `${staffStatusLabel(previousStatus)} → ${staffStatusLabel(nextStatus)}${publicUpdate ? ` · ${publicUpdate}` : ""}`);
+  if (nextStatus === "closed") {
+    activeStaffView = "archive";
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#archive`);
+    document.querySelector("#archive-case-notice").hidden = false;
+    document.querySelector("#staff-decision-panel").hidden = true;
+    document.querySelector("#staff-note-form").hidden = true;
+  }
   await advancedLoadStaffCases();
   selectedStaffCase = staffCases.get(caseId);
   if (selectedStaffCase) {
@@ -280,6 +320,13 @@ async function deleteSelectedTestTicket() {
 }
 
 document.querySelector("#staff-results")?.addEventListener("click", (event) => {
+  const viewButton = event.target.closest("[data-staff-view]");
+  if (viewButton) {
+    activeStaffView = viewButton.dataset.staffView === "archive" ? "archive" : "open";
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${activeStaffView === "archive" ? "#archive" : ""}`);
+    renderStaffCaseQueue();
+    return;
+  }
   const createButton = event.target.closest("[data-create-test-ticket]");
   if (createButton) {
     createTestTicket(createButton);
