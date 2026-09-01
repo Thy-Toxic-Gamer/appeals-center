@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070a08">
+  <meta name="description" content="Submit and track platform-specific or universal moderation appeals for the ThyToxicGamer community.">
+  <meta property="og:title" content="⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆ Appeals Center">
+  <meta property="og:description" content="One appeal center. Separate decisions for every platform and moderation action.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://thy-toxic-gamer.github.io/appeals-center/">
+  <meta name="twitter:card" content="summary">
+  <title>Appeals Center | ⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to Appeals Center</a>
+
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Appeals Center home">
+        <strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong>
+        <small>APPEALS CENTER</small>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="https://thy-toxic-gamer.github.io/central-command/">Central Command</a>
+        <a href="status.html">Check Status</a>
+        <a class="staff-link" href="staff.html">Staff Review</a>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> Moderation review system</p>
+          <h1 id="page-title">Appeals<br><em>Center</em></h1>
+          <p class="hero-summary">Submit one platform-specific appeal or a Universal Appeal covering multiple locations. Every punishment receives its own case and its own decision.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#submit-appeal">Start an Appeal <span aria-hidden="true">↓</span></a>
+            <a class="button button-secondary" href="status.html">Check Appeal Status <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <div class="hero-system" aria-label="Appeals Center principles">
+          <article><b>01</b><div><strong>Separate cases</strong><small>Every platform and punishment remains independent.</small></div></article>
+          <article><b>02</b><div><strong>Universal option</strong><small>One submission can create several linked appeals.</small></div></article>
+          <article><b>03</b><div><strong>Private tracking</strong><small>Applicants follow updates through a secure account.</small></div></article>
+        </div>
+      </section>
+
+      <section class="appeal-section" id="submit-appeal" aria-labelledby="appeal-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">01 / SUBMIT AN APPEAL</p>
+            <h2 id="appeal-title">Choose how to appeal</h2>
+          </div>
+          <p>Select one location for an Individual Appeal or several locations for a Universal Appeal.</p>
+        </div>
+
+        <div class="setup-notice" role="status">
+          <span>SETUP PHASE</span>
+          <p>The interface is ready for review. Secure email sign-in and permanent submissions will be connected next.</p>
+        </div>
+
+        <form class="appeal-form" id="appeal-form" novalidate>
+          <fieldset class="form-block mode-block">
+            <legend>Appeal type</legend>
+            <div class="mode-grid">
+              <button class="mode-card is-active" type="button" data-mode="individual" aria-pressed="true">
+                <span>Individual Appeal</span>
+                <small>One platform and one moderation action.</small>
+              </button>
+              <button class="mode-card" type="button" data-mode="universal" aria-pressed="false">
+                <span>Universal Appeal</span>
+                <small>Multiple linked cases submitted together.</small>
+              </button>
+            </div>
+            <p class="field-note" id="mode-guidance">Choose one platform below.</p>
+          </fieldset>
+
+          <fieldset class="form-block platform-block">
+            <legend>Platform or location</legend>
+            <div class="platform-grid" id="platform-grid">
+              <button class="platform-card discord" type="button" data-platform="discord" aria-pressed="false"><span>Discord</span><small>Server moderation</small><b aria-hidden="true">+</b></button>
+              <button class="platform-card twitch" type="button" data-platform="twitch" aria-pressed="false"><span>Twitch</span><small>Stream and chat</small><b aria-hidden="true">+</b></button>
+              <button class="platform-card youtube" type="button" data-platform="youtube" aria-pressed="false"><span>YouTube</span><small>Channel and live chat</small><b aria-hidden="true">+</b></button>
+              <button class="platform-card kick" type="button" data-platform="kick" aria-pressed="false"><span>Kick</span><small>Stream and chat</small><b aria-hidden="true">+</b></button>
+              <button class="platform-card twitter" type="button" data-platform="twitter" aria-pressed="false"><span>X / Twitter</span><small>Social account</small><b aria-hidden="true">+</b></button>
+              <button class="platform-card instagram" type="button" data-platform="instagram" aria-pressed="false"><span>Instagram</span><small>Social account</small><b aria-hidden="true">+</b></button>
+            </div>
+            <p class="field-error" id="platform-error" hidden>Select at least one platform.</p>
+          </fieldset>
+
+          <div class="form-block identity-block">
+            <div class="form-block-heading">
+              <div><span>Applicant information</span><small>Your email will be used for secure sign-in and appeal updates.</small></div>
+            </div>
+            <div class="field-grid two-column">
+              <label><span>Email address</span><input id="email" name="email" type="email" autocomplete="email" placeholder="name@example.com" required></label>
+              <label><span>Preferred display name</span><input id="display-name" name="display_name" type="text" autocomplete="nickname" maxlength="60" placeholder="How staff should address you" required></label>
+            </div>
+          </div>
+
+          <div class="selected-cases" id="selected-cases" aria-live="polite">
+            <div class="empty-selection">
+              <strong>No platform selected</strong>
+              <p>Select a platform above to add its appeal details.</p>
+            </div>
+          </div>
+
+          <div class="form-block statement-block">
+            <div class="field-grid two-column">
+              <label><span>Incident date</span><input id="incident-date" name="incident_date" type="date"></label>
+              <label><span>Existing case number <i>Optional</i></span><input id="existing-case" name="existing_case" type="text" maxlength="40" placeholder="Example: DIS-BAN-0001"></label>
+            </div>
+            <label><span>Explanation</span><textarea id="explanation" name="explanation" rows="7" minlength="50" maxlength="3000" placeholder="Explain what happened, why you believe the action should be reconsidered, and what would be different going forward." required></textarea><small class="counter"><b id="explanation-count">0</b> / 3000</small></label>
+            <label><span>Supporting evidence link <i>Optional</i></span><input id="evidence" name="evidence" type="url" inputmode="url" placeholder="https://"></label>
+            <label class="declaration"><input id="declaration" name="declaration" type="checkbox" required><span>I confirm this information is truthful and understand that submitting an appeal does not guarantee approval.</span></label>
+          </div>
+
+          <div class="form-actions">
+            <p><strong>Not submitted yet.</strong> Review mode lets you confirm the case structure before secure storage is connected.</p>
+            <button class="button button-primary" type="submit">Review Appeal <span aria-hidden="true">→</span></button>
+          </div>
+        </form>
+      </section>
+
+      <section class="rules-section" aria-labelledby="rules-title">
+        <div>
+          <p class="section-number">02 / BEFORE YOU SUBMIT</p>
+          <h2 id="rules-title">Appeal rules</h2>
+        </div>
+        <div class="rules-grid">
+          <article><b>01</b><h3>Be truthful</h3><p>False statements, altered evidence, or impersonation may result in immediate denial.</p></article>
+          <article><b>02</b><h3>One active case</h3><p>Do not submit duplicate appeals for the same platform and moderation action.</p></article>
+          <article><b>03</b><h3>Stay respectful</h3><p>Threats, harassment, or abusive language will not help an appeal and may close the case.</p></article>
+          <article><b>04</b><h3>Decisions stay separate</h3><p>An approval for one platform or punishment does not reverse decisions anywhere else.</p></article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS CENTER</small></div>
+      <p>Fair review. Clear records. Separate decisions.</p>
+      <span>© <b data-current-year></b></span>
+    </footer>
+  </div>
+
+  <dialog class="review-dialog" id="review-dialog">
+    <button class="dialog-close" type="button" data-close-dialog aria-label="Close review">×</button>
+    <p class="section-number">APPEAL PREVIEW</p>
+    <h2>Review your case structure</h2>
+    <div id="review-content"></div>
+    <div class="dialog-notice"><strong>This preview was not submitted.</strong><p>Secure email sign-in and permanent appeal storage must be connected before submissions can open.</p></div>
+    <button class="button button-secondary" type="button" data-close-dialog>Return to Form</button>
+  </dialog>
+</body>
+</html>
