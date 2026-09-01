@@ -16,6 +16,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; color: var(--text); background: radial-gradient(circle at 8% 12%, rgba(168,240,0,.08), transparent 30rem), radial-gradient(circle at 94% 82%, rgba(255,62,152,.06), transparent 34rem), var(--bg); font-family: var(--body); line-height: 1.5; }
 button, input, select, textarea { font: inherit; }
