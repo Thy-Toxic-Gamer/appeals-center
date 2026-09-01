@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260901-archive">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
   <script src="app.js" defer></script>
-  <script src="staff.js?v=20260901-2" defer></script>
+  <script src="staff.js?v=20260901-3" defer></script>
 </head>
 <body>
   <div class="site-shell">
@@ -58,6 +58,11 @@
     <button class="dialog-close" type="button" data-close-staff-dialog aria-label="Close case">×</button>
     <p class="section-number">STAFF CASE REVIEW</p>
     <div id="staff-case-details"></div>
+
+    <section class="archive-case-notice" id="archive-case-notice" hidden>
+      <strong>Archived case</strong>
+      <p>This appeal is closed and read-only. Its complete protected record remains available here until scheduled retention removes it.</p>
+    </section>
 
     <section class="test-ticket-actions" id="test-ticket-actions" hidden>
       <div><strong>Test ticket</strong><p>This record was created for testing and can be permanently removed without affecting real appeals.</p></div>
