@@ -16,7 +16,7 @@ create table if not exists public.profiles (
 
 create table if not exists public.staff_members (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  role text not null check (role in ('moderator', 'overseer', 'owner')),
+  role text not null check (role in ('moderator', 'admin', 'owner')),
   active boolean not null default true,
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
