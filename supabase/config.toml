@@ -1,2 +1,2 @@
 [functions.discord-appeal-events]
-verify_jwt = true
+verify_jwt = false
