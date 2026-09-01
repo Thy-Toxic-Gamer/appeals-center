@@ -9,12 +9,15 @@
   <meta property="og:description" content="One appeal center. Separate decisions for every platform and moderation action.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://thy-toxic-gamer.github.io/appeals-center/">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://thy-toxic-gamer.github.io/appeals-center/assets/appeals-center-hero.webp">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://thy-toxic-gamer.github.io/appeals-center/assets/appeals-center-hero.webp">
   <title>Appeals Center | ⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?release=1.0-nav">
+  <link rel="preload" as="image" href="assets/appeals-center-hero.webp" fetchpriority="high">
+  <link rel="stylesheet" href="styles.css?release=1.0-visual">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
   <script src="app.js" defer></script>
@@ -23,20 +26,17 @@
   <a class="skip-link" href="#main-content">Skip to Appeals Center</a>
 
   <div class="site-shell">
-    <header class="site-header">
+    <header class="site-header ecosystem-header">
       <a class="brand" href="index.html" aria-label="Appeals Center home">
         <strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong>
         <small>APPEALS CENTER · VER. 1.0</small>
       </a>
-      <nav aria-label="Primary navigation">
-        <a class="central-link" href="https://thy-toxic-gamer.github.io/central-command/">Central Command</a>
-        <a href="status.html">Check Status</a>
-        <a class="staff-link" href="staff.html">Staff Review</a>
-      </nav>
+      <nav class="ecosystem-nav" aria-label="Primary navigation"><a href="#submit-appeal">Submit Appeal</a><a href="status.html">Check Status</a><a href="staff.html">Staff Review</a><a class="hub-link" href="https://thy-toxic-gamer.github.io/central-command/">Central Command <span aria-hidden="true">↗</span></a></nav>
     </header>
 
     <main id="main-content">
-      <section class="hero" aria-labelledby="page-title">
+      <section class="hero appeals-hero" aria-labelledby="page-title">
+        <div class="ecosystem-hero-art" aria-hidden="true"></div>
         <div class="hero-copy">
           <p class="eyebrow"><span></span> Moderation review system</p>
           <h1 id="page-title">Appeals<br><em>Center</em></h1>
