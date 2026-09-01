@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070a08">
+  <meta name="description" content="Protected staff review portal for ThyToxicGamer moderation appeals.">
+  <title>Staff Review | ⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="brand" href="index.html"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS CENTER</small></a>
+      <nav aria-label="Primary navigation"><a href="index.html">Public Appeals</a><a href="status.html">Check Status</a></nav>
+    </header>
+    <main class="utility-page">
+      <section class="utility-card staff-card" aria-labelledby="staff-title">
+        <p class="section-number">PROTECTED AREA</p>
+        <h1 id="staff-title">Staff Review</h1>
+        <p>This area will be restricted to approved ThyToxicGamer staff. Public applicants will never see staff notes, internal evidence, or moderation history.</p>
+        <div class="setup-notice"><span>ACCESS LOCKED</span><p>Staff authentication and permissions will be connected with the appeal database.</p></div>
+        <div class="role-grid">
+          <article><strong>Owner</strong><p>Complete access, final decisions, staff permissions, and case administration.</p></article>
+          <article><strong>Overseer</strong><p>Review cases, request information, add private notes, approve, deny, and close appeals.</p></article>
+          <article><strong>Moderator</strong><p>Review assigned cases, provide evidence, and add recommendations without changing protected settings.</p></article>
+        </div>
+        <button class="button button-primary" id="staff-login" type="button">Staff Sign In <span aria-hidden="true">→</span></button>
+        <p class="inline-message" id="staff-message" hidden>Secure staff sign-in is not connected yet.</p>
+      </section>
+    </main>
+    <footer class="site-footer"><div class="footer-brand"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS CENTER</small></div><p>Authorized staff only.</p><span>© <b data-current-year></b></span></footer>
+  </div>
+</body>
+</html>
