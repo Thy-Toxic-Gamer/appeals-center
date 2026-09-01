@@ -2,6 +2,10 @@
 
 Universal moderation appeal and case-tracking center for the ThyToxicGamer community.
 
+## Current public release
+
+**Ver. 1.0 — Unified Central Command release — September 1, 2026**
+
 ## Scope
 
 - Individual appeals for Discord, Twitch, YouTube, Kick, X / Twitter, and Instagram
