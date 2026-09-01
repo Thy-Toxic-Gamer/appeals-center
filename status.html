@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="supabase-config.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -18,18 +20,29 @@
       <a class="brand" href="index.html"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS CENTER</small></a>
       <nav aria-label="Primary navigation"><a href="index.html">Submit Appeal</a><a class="staff-link" href="staff.html">Staff Review</a></nav>
     </header>
-    <main class="utility-page">
-      <section class="utility-card" aria-labelledby="status-title">
+    <main class="dashboard-page">
+      <section class="utility-card dashboard-card" aria-labelledby="status-title">
         <p class="section-number">CASE TRACKING</p>
         <h1 id="status-title">Check Appeal Status</h1>
-        <p>Once secure accounts are connected, applicants will sign in by email to view every individual or linked Universal Appeal.</p>
-        <div class="setup-notice"><span>SETUP PHASE</span><p>Status lookup will open with the secure account system.</p></div>
-        <form class="lookup-form" id="status-form">
-          <label><span>Email address</span><input type="email" autocomplete="email" placeholder="name@example.com" required></label>
-          <label><span>Appeal number</span><input type="text" placeholder="Example: TTV-BAN-0001" required></label>
-          <button class="button button-primary" type="submit">Check Status <span aria-hidden="true">→</span></button>
-        </form>
-        <p class="inline-message" id="status-message" hidden>This case lookup is not live yet. No information was submitted.</p>
+        <p>Sign in with the same account used to submit. Universal Appeals stay grouped while every platform keeps its own status and decision.</p>
+        <section class="account-panel compact-account" aria-label="Account access">
+          <div data-auth-signed-out>
+            <div class="account-copy"><h3>Private account access</h3><p>Twitch sign-in is recommended. Email remains available as a backup.</p></div>
+            <div class="auth-actions">
+              <button class="button twitch-button" type="button" data-twitch-sign-in>Sign in with Twitch <span aria-hidden="true">↗</span></button>
+              <details class="email-backup"><summary>Use email instead</summary><form data-email-sign-in><label><span>Email address</span><input name="email" type="email" autocomplete="email" required></label><button class="button button-secondary" type="submit">Send Sign-In Link</button></form></details>
+            </div>
+          </div>
+          <div class="signed-in-card" data-auth-signed-in hidden>
+            <img data-auth-avatar hidden alt="">
+            <div><small data-auth-provider></small><strong data-auth-name></strong><span data-auth-username></span></div>
+            <button class="text-button" type="button" data-sign-out>Sign out</button>
+          </div>
+          <p class="auth-message" data-auth-message hidden></p>
+        </section>
+        <section class="results-list" id="status-results" aria-live="polite">
+          <div class="loading-state">Loading secure account…</div>
+        </section>
       </section>
     </main>
     <footer class="site-footer"><div class="footer-brand"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS CENTER</small></div><p>Fair review. Clear records. Separate decisions.</p><span>© <b data-current-year></b></span></footer>
