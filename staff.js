@@ -56,7 +56,7 @@ async function advancedLoadStaffCases() {
   currentStaffRole = role;
   const { data, error } = await database
     .from("appeal_cases")
-    .select("id, case_number, platform, action_type, platform_username, profile_url, moderation_reason, status, applicant_update, decision_reason, created_at, closed_at, purge_after, appeal_submissions(id, submission_number, display_name, incident_date, existing_case_number, explanation, evidence_link, created_at)")
+    .select("id, case_number, platform, action_type, platform_username, profile_url, moderation_reason, status, applicant_update, decision_reason, created_at, closed_at, purge_after, appeal_submissions(id, submission_number, display_name, incident_date, existing_case_number, explanation, evidence_link, is_test, created_at)")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -66,8 +66,8 @@ async function advancedLoadStaffCases() {
   }
 
   staffCases = new Map((data || []).map((item) => [item.id, item]));
-  results.innerHTML = `<div class="staff-role">Signed in as <strong>${escapeText(role)}</strong></div>${data?.length
-    ? data.map((item) => `<button class="staff-case-row" type="button" data-open-staff-case="${escapeText(item.id)}"><div><strong>${escapeText(item.case_number)}</strong><small>${escapeText(platformConfig[item.platform]?.name || item.platform)} · ${escapeText(item.action_type)} · @${escapeText(item.platform_username)}</small></div><span data-status="${escapeText(item.status)}">${escapeText(staffStatusLabel(item.status))}</span><em>Open case →</em></button>`).join("")
+  results.innerHTML = `<div class="staff-toolbar"><div class="staff-role">Signed in as <strong>${escapeText(role)}</strong></div>${role === "owner" ? '<button class="button button-secondary" type="button" data-create-test-ticket>Create Test Ticket</button>' : ""}</div><p class="staff-form-message" id="staff-test-message" hidden></p>${data?.length
+    ? data.map((item) => `<button class="staff-case-row${item.appeal_submissions?.is_test ? " is-test" : ""}" type="button" data-open-staff-case="${escapeText(item.id)}"><div><strong>${escapeText(item.case_number)}${item.appeal_submissions?.is_test ? ' <b class="test-badge">TEST</b>' : ""}</strong><small>${escapeText(platformConfig[item.platform]?.name || item.platform)} · ${escapeText(item.action_type)} · @${escapeText(item.platform_username)}</small></div><span data-status="${escapeText(item.status)}">${escapeText(staffStatusLabel(item.status))}</span><em>Open case →</em></button>`).join("")
     : '<div class="empty-state"><strong>No cases in the queue</strong><p>New appeals will appear here.</p></div>'}`;
 }
 
@@ -95,6 +95,8 @@ async function openStaffCase(caseId) {
     </div>`;
 
   document.querySelector("#staff-decision-panel").hidden = !["admin", "owner"].includes(currentStaffRole);
+  document.querySelector("#test-ticket-actions").hidden = !(currentStaffRole === "owner" && submission.is_test);
+  document.querySelector("#test-ticket-message").hidden = true;
   document.querySelector("#staff-case-status").value = item.status;
   document.querySelector("#staff-public-update").value = item.applicant_update || "";
   document.querySelector("#staff-decision-reason").value = item.decision_reason || "";
@@ -217,12 +219,70 @@ async function addPrivateStaffNote(event) {
   queueStaffHistoryRefresh(caseId);
 }
 
+async function createTestTicket(button) {
+  if (currentStaffRole !== "owner") return;
+  button.disabled = true;
+  button.textContent = "Creating…";
+  const { data, error } = await database.rpc("create_test_appeal");
+  if (error) {
+    button.disabled = false;
+    button.textContent = "Create Test Ticket";
+    const message = document.querySelector("#staff-test-message");
+    if (message) {
+      message.textContent = cleanError(error);
+      message.classList.add("is-error");
+      message.hidden = false;
+    }
+    return;
+  }
+
+  await advancedLoadStaffCases();
+  const newCase = staffCases.get(data.case_id);
+  if (newCase) openStaffCase(newCase.id);
+}
+
+async function deleteSelectedTestTicket() {
+  const submission = selectedStaffCase?.appeal_submissions;
+  if (currentStaffRole !== "owner" || !submission?.is_test) return;
+  const confirmed = window.confirm(`Permanently delete test ticket ${submission.submission_number}? This cannot be undone.`);
+  if (!confirmed) return;
+
+  const button = document.querySelector("#delete-test-ticket");
+  const message = document.querySelector("#test-ticket-message");
+  button.disabled = true;
+  button.textContent = "Deleting…";
+  message.hidden = true;
+  const { error } = await database.rpc("delete_test_appeal", {
+    p_submission_id: submission.id
+  });
+
+  if (error) {
+    button.disabled = false;
+    button.textContent = "Delete Test Ticket";
+    message.textContent = cleanError(error);
+    message.classList.add("is-error");
+    message.hidden = false;
+    return;
+  }
+
+  stopStaffHistoryRefresh();
+  document.querySelector("#staff-case-dialog")?.close();
+  selectedStaffCase = null;
+  await advancedLoadStaffCases();
+}
+
 document.querySelector("#staff-results")?.addEventListener("click", (event) => {
+  const createButton = event.target.closest("[data-create-test-ticket]");
+  if (createButton) {
+    createTestTicket(createButton);
+    return;
+  }
   const button = event.target.closest("[data-open-staff-case]");
   if (button) openStaffCase(button.dataset.openStaffCase);
 });
 document.querySelector("#staff-case-form")?.addEventListener("submit", saveStaffCase);
 document.querySelector("#staff-note-form")?.addEventListener("submit", addPrivateStaffNote);
+document.querySelector("#delete-test-ticket")?.addEventListener("click", deleteSelectedTestTicket);
 document.querySelector("[data-close-staff-dialog]")?.addEventListener("click", () => {
   stopStaffHistoryRefresh();
   document.querySelector("#staff-case-dialog")?.close();
