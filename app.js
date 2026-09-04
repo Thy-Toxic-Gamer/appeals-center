@@ -56,7 +56,29 @@ function cleanError(error) {
 }
 
 function getRedirectUrl() {
-  return `${window.location.origin}${window.location.pathname}${window.location.search}`;
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
+function getClaimParameters() {
+  const parameters = new URLSearchParams(window.location.search);
+  const caseNumber = parameters.get("case");
+  const claimToken = parameters.get("claim");
+  if (caseNumber && claimToken) return { caseNumber, claimToken };
+
+  try {
+    const saved = JSON.parse(window.sessionStorage.getItem("pendingModerationClaim") || "null");
+    if (saved?.caseNumber && saved?.claimToken) return saved;
+  } catch {
+    window.sessionStorage.removeItem("pendingModerationClaim");
+  }
+  return { caseNumber: null, claimToken: null };
+}
+
+function rememberClaimParameters() {
+  const claim = getClaimParameters();
+  if (claim.caseNumber && claim.claimToken) {
+    window.sessionStorage.setItem("pendingModerationClaim", JSON.stringify(claim));
+  }
 }
 
 function getIdentity(user) {
@@ -80,6 +102,7 @@ function setAuthMessage(message, isError = false) {
 
 async function signInWithTwitch() {
   if (!database) return setAuthMessage("The secure account connection could not load.", true);
+  rememberClaimParameters();
   setAuthMessage("Opening Twitch sign-in…");
   const { error } = await database.auth.signInWithOAuth({
     provider: "twitch",
@@ -93,6 +116,7 @@ async function signInWithEmail(event) {
   if (!database) return setAuthMessage("The secure account connection could not load.", true);
   const email = new FormData(event.currentTarget).get("email")?.toString().trim();
   if (!email) return;
+  rememberClaimParameters();
   setAuthMessage("Sending your secure sign-in link…");
   const { error } = await database.auth.signInWithOtp({
     email,
@@ -163,6 +187,7 @@ function clearClaimParameters() {
   const url = new URL(window.location.href);
   url.searchParams.delete("case");
   url.searchParams.delete("claim");
+  window.sessionStorage.removeItem("pendingModerationClaim");
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
@@ -201,8 +226,8 @@ async function loadModerationCases() {
   if (!panel || !results) return;
 
   if (!currentSession) {
-    const parameters = new URLSearchParams(window.location.search);
-    panel.hidden = !(parameters.get("case") && parameters.get("claim"));
+    const claim = getClaimParameters();
+    panel.hidden = !(claim.caseNumber && claim.claimToken);
     if (!panel.hidden) {
       results.innerHTML = '<div class="linked-case-empty"><strong>Sign in to open your private case</strong><p>After Twitch sign-in, this secure ticket will appear here automatically.</p></div>';
     }
@@ -213,9 +238,7 @@ async function loadModerationCases() {
   results.innerHTML = '<div class="loading-state">Loading your Discord cases…</div>';
 
   let notice = "";
-  const parameters = new URLSearchParams(window.location.search);
-  const caseNumber = parameters.get("case");
-  const claimToken = parameters.get("claim");
+  const { caseNumber, claimToken } = getClaimParameters();
 
   if (caseNumber && claimToken) {
     const { error: claimError } = await database.rpc("claim_moderation_case", {
