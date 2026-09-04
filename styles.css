@@ -412,3 +412,58 @@ input::placeholder, textarea::placeholder { color: #657069; }
 }
 
 @media (max-width:700px) { body { background-attachment:scroll; } }
+
+
+/* Appeals & Tickets Center */
+.ticket-center-card { margin-top: 1.5rem; }
+.ticket-center-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.ticket-center-heading h2 { margin: .15rem 0; font: 800 2rem/1 "Barlow Condensed", sans-serif; text-transform: uppercase; }
+.ticket-center-heading p { margin: .35rem 0 0; color: var(--muted); }
+.ticket-status-tabs, .ticket-type-tabs { display: flex; flex-wrap: wrap; gap: .55rem; }
+.ticket-status-tabs button, .ticket-type-tabs button {
+  border: 1px solid #294632; background: #0b140e; color: #aebbb1; border-radius: 4px;
+  padding: .65rem .85rem; font: 700 .85rem/1 "Inter", sans-serif; cursor: pointer;
+}
+.ticket-status-tabs button.is-active, .ticket-type-tabs button.is-active {
+  border-color: #49d77a; color: #d8ffe5; background: rgba(41, 183, 91, .14);
+}
+.ticket-type-tabs { margin: 1rem 0; }
+.ticket-type-tabs span { display: inline-grid; place-items: center; min-width: 1.4rem; height: 1.4rem; margin-left: .3rem; border-radius: 50%; background: rgba(255,255,255,.08); }
+.ticket-search { display: grid; gap: .45rem; margin: 1rem 0 .4rem; color: #d7e0d9; font-weight: 700; }
+.ticket-search input {
+  width: 100%; min-height: 46px; border: 1px solid #2b4734; border-radius: 4px;
+  background: #070c09; color: #f4fff7; padding: .75rem .85rem; font: inherit;
+}
+.ticket-search input:focus { outline: 2px solid rgba(73,215,122,.35); border-color: #49d77a; }
+.ticket-result-count { color: var(--muted); margin: .6rem 0 1rem; }
+.ticket-record-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+.ticket-record-card {
+  appearance: none; width: 100%; text-align: left; border: 1px solid #294632; border-left: 4px solid #49d77a;
+  border-radius: 4px; background: #0a120d; color: #edf8f0; padding: 1rem; cursor: pointer;
+}
+.ticket-record-card:hover, .ticket-record-card:focus-visible { border-color: #49d77a; transform: translateY(-1px); }
+.ticket-record-card.ticket-type-report { border-left-color: #ff2f55; }
+.ticket-record-card.ticket-type-staff_inquiry { border-left-color: #35c77a; }
+.ticket-record-card.ticket-type-suggestion { border-left-color: #696cff; }
+.ticket-record-heading { display: flex; align-items: center; gap: .65rem; }
+.ticket-record-heading > span { font-size: 1.35rem; }
+.ticket-record-heading div { display: grid; gap: .18rem; flex: 1; }
+.ticket-record-heading strong { color: #9dff58; }
+.ticket-record-heading small, .ticket-record-card p, .ticket-record-card time { color: #9cac9f; }
+.ticket-record-heading em { color: #91e6aa; font-style: normal; font-size: .8rem; }
+.ticket-record-card h3 { margin: .85rem 0 .35rem; font-size: 1rem; }
+.ticket-record-card p { margin: 0 0 .65rem; line-height: 1.5; }
+.ticket-record-card time { font-size: .78rem; }
+.ticket-transcript-panel { margin-top: 1rem; }
+.ticket-transcript-panel pre {
+  max-height: 430px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;
+  border: 1px solid #294632; border-radius: 4px; background: #060a07; color: #dce9df;
+  padding: 1rem; font: .82rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.ticket-transcript-panel .button { margin-bottom: .8rem; }
+
+@media (max-width: 760px) {
+  .ticket-center-heading { align-items: stretch; flex-direction: column; }
+  .ticket-record-grid { grid-template-columns: 1fr; }
+  .ticket-status-tabs button, .ticket-type-tabs button { flex: 1 1 auto; }
+}
