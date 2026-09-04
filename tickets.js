@@ -113,6 +113,9 @@
     }
     signedInStaffRole = role;
     tickets = data || [];
+    const hasActiveTickets = tickets.some((ticket) => ticket.status !== "closed");
+    const hasArchivedTickets = tickets.some((ticket) => ticket.status === "closed");
+    if (!hasActiveTickets && hasArchivedTickets) statusView = "archive";
     renderTickets();
   }
 
