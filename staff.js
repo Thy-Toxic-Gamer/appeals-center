@@ -6,6 +6,47 @@ let staffHistoryRefreshTimer = null;
 let staffHistoryPollTimer = null;
 let staffCaseData = [];
 let activeStaffView = window.location.hash === "#archive" ? "archive" : "open";
+let staffSearchQuery = "";
+
+function staffApplicantKey(item) {
+  const submission = item.appeal_submissions || {};
+  if (submission.applicant_id) return `id:${submission.applicant_id}`;
+  return `name:${String(submission.display_name || "").trim().toLowerCase()}|user:${String(item.platform_username || "").trim().toLowerCase()}`;
+}
+
+function staffApplicantAppealCount(item) {
+  const applicantKey = staffApplicantKey(item);
+  const submissionIds = new Set(
+    staffCaseData
+      .filter((candidate) => staffApplicantKey(candidate) === applicantKey)
+      .map((candidate) => candidate.appeal_submissions?.id)
+      .filter(Boolean)
+  );
+  return submissionIds.size;
+}
+
+function staffCaseMatchesSearch(item) {
+  if (!staffSearchQuery) return true;
+  const submission = item.appeal_submissions || {};
+  const searchable = [
+    submission.display_name,
+    item.platform_username,
+    submission.submission_number,
+    item.case_number,
+    item.platform,
+    item.action_type
+  ].join(" ").toLowerCase();
+  return searchable.includes(staffSearchQuery);
+}
+
+function staffCaseListMarkup(cases, emptyCopy) {
+  if (!cases.length) return emptyCopy;
+  return cases.map((item) => {
+    const appealCount = staffApplicantAppealCount(item);
+    const priorCount = Math.max(0, appealCount - 1);
+    return `<button class="staff-case-row${item.appeal_submissions?.is_test ? " is-test" : ""}${item.status === "closed" ? " is-archived" : ""}" type="button" data-open-staff-case="${escapeText(item.id)}"><div><strong>${escapeText(item.case_number)}${item.appeal_submissions?.is_test ? ' <b class="test-badge">TEST</b>' : ""}</strong><small>${escapeText(item.appeal_submissions?.display_name || "Applicant")} · @${escapeText(item.platform_username)} · ${escapeText(platformConfig[item.platform]?.name || item.platform)} · ${escapeText(item.action_type)}</small><small class="appeal-history-count">${appealCount} total appeal${appealCount === 1 ? "" : "s"} · ${priorCount} prior</small></div><span data-status="${escapeText(item.status)}">${escapeText(staffStatusLabel(item.status))}</span><em>${item.status === "closed" ? "View archive →" : "Open case →"}</em></button>`;
+  }).join("");
+}
 
 function renderStaffCaseQueue() {
   const results = document.querySelector("#staff-results");
@@ -13,10 +54,13 @@ function renderStaffCaseQueue() {
 
   const openCases = staffCaseData.filter((item) => item.status !== "closed");
   const archivedCases = staffCaseData.filter((item) => item.status === "closed");
-  const visibleCases = activeStaffView === "archive" ? archivedCases : openCases;
-  const emptyCopy = activeStaffView === "archive"
-    ? '<div class="empty-state"><strong>No archived cases</strong><p>Closed appeals will move here with their complete protected record.</p></div>'
-    : '<div class="empty-state"><strong>No cases in the queue</strong><p>New and active appeals will appear here.</p></div>';
+  const viewCases = activeStaffView === "archive" ? archivedCases : openCases;
+  const visibleCases = viewCases.filter(staffCaseMatchesSearch);
+  const emptyCopy = staffSearchQuery
+    ? '<div class="empty-state"><strong>No matching appeals</strong><p>Try another applicant name, username, submission number, or case number.</p></div>'
+    : activeStaffView === "archive"
+      ? '<div class="empty-state"><strong>No archived cases</strong><p>Closed appeals will move here with their complete protected record.</p></div>'
+      : '<div class="empty-state"><strong>No cases in the queue</strong><p>New and active appeals will appear here.</p></div>';
 
   results.innerHTML = `
     <div class="staff-toolbar">
@@ -24,14 +68,16 @@ function renderStaffCaseQueue() {
       ${currentStaffRole === "owner" ? '<button class="button button-secondary" type="button" data-create-test-ticket>Create Test Ticket</button>' : ""}
     </div>
     <p class="staff-form-message" id="staff-test-message" hidden></p>
+    <div class="staff-search-panel">
+      <label for="staff-case-search"><span>Search appeal history</span><input id="staff-case-search" type="search" value="${escapeText(staffSearchQuery)}" placeholder="Name, username, submission, or case number" autocomplete="off"></label>
+      <p id="staff-search-summary">Showing <strong>${visibleCases.length}</strong> of ${viewCases.length} ${activeStaffView === "archive" ? "archived" : "active"} cases.</p>
+    </div>
     <div class="staff-view-tabs" role="tablist" aria-label="Appeal case lists">
       <button type="button" role="tab" aria-selected="${activeStaffView === "open"}" class="${activeStaffView === "open" ? "is-active" : ""}" data-staff-view="open">Active Appeals <span>${openCases.length}</span></button>
       <button type="button" role="tab" aria-selected="${activeStaffView === "archive"}" class="${activeStaffView === "archive" ? "is-active" : ""}" data-staff-view="archive">Archive <span>${archivedCases.length}</span></button>
     </div>
     <div class="staff-case-list">
-      ${visibleCases.length
-        ? visibleCases.map((item) => `<button class="staff-case-row${item.appeal_submissions?.is_test ? " is-test" : ""}${item.status === "closed" ? " is-archived" : ""}" type="button" data-open-staff-case="${escapeText(item.id)}"><div><strong>${escapeText(item.case_number)}${item.appeal_submissions?.is_test ? ' <b class="test-badge">TEST</b>' : ""}</strong><small>${escapeText(platformConfig[item.platform]?.name || item.platform)} · ${escapeText(item.action_type)} · @${escapeText(item.platform_username)}</small></div><span data-status="${escapeText(item.status)}">${escapeText(staffStatusLabel(item.status))}</span><em>${item.status === "closed" ? "View archive →" : "Open case →"}</em></button>`).join("")
-        : emptyCopy}
+      ${staffCaseListMarkup(visibleCases, emptyCopy)}
     </div>`;
 }
 
@@ -86,9 +132,9 @@ async function advancedLoadStaffCases() {
   currentStaffRole = role;
   const { data, error } = await database
     .from("appeal_cases")
-    .select("id, case_number, platform, action_type, platform_username, profile_url, moderation_reason, status, applicant_update, decision_reason, created_at, closed_at, purge_after, appeal_submissions(id, submission_number, display_name, incident_date, existing_case_number, explanation, evidence_link, is_test, created_at)")
+    .select("id, case_number, platform, action_type, platform_username, profile_url, moderation_reason, status, applicant_update, decision_reason, created_at, closed_at, purge_after, appeal_submissions(id, applicant_id, submission_number, display_name, incident_date, existing_case_number, explanation, evidence_link, is_test, created_at)")
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(1000);
 
   if (error) {
     results.innerHTML = `<p class="inline-message is-error">${escapeText(cleanError(error))}</p>`;
@@ -110,6 +156,8 @@ async function openStaffCase(caseId) {
   selectedStaffCase = item;
   const submission = item.appeal_submissions || {};
   const isArchived = item.status === "closed";
+  const appealCount = staffApplicantAppealCount(item);
+  const priorAppealCount = Math.max(0, appealCount - 1);
   const profileUrl = safeExternalUrl(item.profile_url);
   const evidenceUrl = safeExternalUrl(submission.evidence_link);
   document.querySelector("#staff-case-details").innerHTML = `
@@ -120,6 +168,7 @@ async function openStaffCase(caseId) {
     <div class="staff-detail-grid">
       <article><small>Applicant</small><strong>${escapeText(submission.display_name || "Applicant")}</strong><p>@${escapeText(item.platform_username)}</p>${profileUrl ? `<a href="${escapeText(profileUrl)}" target="_blank" rel="noopener noreferrer">Open platform profile ↗</a>` : ""}</article>
       <article><small>Submission</small><strong>${escapeText(submission.submission_number || "")}</strong><p>${submission.incident_date ? `Incident: ${escapeText(submission.incident_date)}` : "Incident date not provided"}</p></article>
+      <article class="wide appeal-history-summary"><small>Applicant appeal history</small><strong>${appealCount} total appeal${appealCount === 1 ? "" : "s"}</strong><p>${priorAppealCount ? `${priorAppealCount} prior appeal${priorAppealCount === 1 ? "" : "s"} found for this verified applicant.` : "No prior appeals found for this verified applicant."}</p></article>
       <article class="wide"><small>Case timeline</small><p>Opened: ${new Date(item.created_at).toLocaleString()}${item.closed_at ? ` · Closed: ${new Date(item.closed_at).toLocaleString()}` : " · Currently active"}${item.purge_after ? ` · Retained until: ${new Date(item.purge_after).toLocaleDateString()}` : ""}</p></article>
       <article class="wide"><small>Applicant explanation</small><p>${escapeText(submission.explanation || "No explanation provided.")}</p>${evidenceUrl ? `<a href="${escapeText(evidenceUrl)}" target="_blank" rel="noopener noreferrer">Open supporting evidence ↗</a>` : ""}</article>
       ${item.moderation_reason ? `<article class="wide"><small>Original moderation reason</small><p>${escapeText(item.moderation_reason)}</p></article>` : ""}
@@ -128,7 +177,8 @@ async function openStaffCase(caseId) {
   document.querySelector("#archive-case-notice").hidden = !isArchived;
   document.querySelector("#staff-decision-panel").hidden = isArchived || !["admin", "owner"].includes(currentStaffRole);
   document.querySelector("#staff-note-form").hidden = isArchived;
-  document.querySelector("#test-ticket-actions").hidden = !(currentStaffRole === "owner" && submission.is_test);
+  document.querySelector("#test-ticket-actions").hidden = !(currentStaffRole === "owner" && submission.is_test && !isArchived);
+  document.querySelector("#owner-delete-actions").hidden = !(currentStaffRole === "owner" && isArchived);
   const deleteTestButton = document.querySelector("#delete-test-ticket");
   deleteTestButton.disabled = false;
   deleteTestButton.textContent = "Delete Test Ticket";
@@ -136,9 +186,17 @@ async function openStaffCase(caseId) {
   testTicketMessage.hidden = true;
   testTicketMessage.textContent = "";
   testTicketMessage.classList.remove("is-error");
+  const ownerDeleteButton = document.querySelector("#delete-archived-appeal");
+  ownerDeleteButton.disabled = false;
+  ownerDeleteButton.textContent = "Delete Appeal Permanently";
+  const ownerDeleteMessage = document.querySelector("#owner-delete-message");
+  ownerDeleteMessage.hidden = true;
+  ownerDeleteMessage.textContent = "";
+  ownerDeleteMessage.classList.remove("is-error");
   document.querySelector("#staff-case-status").value = item.status;
   document.querySelector("#staff-public-update").value = item.applicant_update || "";
   document.querySelector("#staff-decision-reason").value = item.decision_reason || "";
+  updateStaffDecisionRequirements();
   document.querySelector("#staff-case-message").hidden = true;
   document.querySelector("#staff-note-message").hidden = true;
   document.querySelector("#staff-note-form").reset();
@@ -174,6 +232,20 @@ async function loadStaffHistory(caseId) {
   }
 }
 
+function updateStaffDecisionRequirements() {
+  const status = document.querySelector("#staff-case-status")?.value;
+  const publicUpdate = document.querySelector("#staff-public-update");
+  const decisionReason = document.querySelector("#staff-decision-reason");
+  const publicCount = document.querySelector("#staff-public-count");
+  const decisionCount = document.querySelector("#staff-decision-count");
+  if (!publicUpdate || !decisionReason) return;
+
+  publicUpdate.required = ["needs_information", "approved", "denied", "closed"].includes(status);
+  decisionReason.required = ["approved", "denied"].includes(status);
+  if (publicCount) publicCount.textContent = publicUpdate.value.length;
+  if (decisionCount) decisionCount.textContent = decisionReason.value.length;
+}
+
 async function saveStaffCase(event) {
   event.preventDefault();
   if (!selectedStaffCase) return;
@@ -189,6 +261,29 @@ async function saveStaffCase(event) {
   const decisionReason = formData.get("decision_reason")?.toString().trim() || null;
   const previousStatus = selectedStaffCase.status;
   const caseId = selectedStaffCase.id;
+  const needsPublicUpdate = ["needs_information", "approved", "denied", "closed"].includes(nextStatus);
+  const needsDecisionReason = ["approved", "denied"].includes(nextStatus);
+
+  if (needsPublicUpdate && (publicUpdate?.length || 0) < 5) {
+    button.disabled = false;
+    button.textContent = "Save Case Update →";
+    message.textContent = "Applicant-visible update must contain at least 5 characters for this status.";
+    message.classList.add("is-error");
+    message.hidden = false;
+    document.querySelector("#staff-public-update")?.focus();
+    return;
+  }
+
+  if (needsDecisionReason && (decisionReason?.length || 0) < 5) {
+    button.disabled = false;
+    button.textContent = "Save Case Update →";
+    message.textContent = "Decision reason must contain at least 5 characters before approving or denying.";
+    message.classList.add("is-error");
+    message.hidden = false;
+    document.querySelector("#staff-decision-reason")?.focus();
+    return;
+  }
+
   const { error } = await database.rpc("staff_manage_case", {
     p_case_id: caseId,
     p_status: nextStatus,
@@ -221,6 +316,7 @@ async function saveStaffCase(event) {
     document.querySelector("#archive-case-notice").hidden = false;
     document.querySelector("#staff-decision-panel").hidden = true;
     document.querySelector("#staff-note-form").hidden = true;
+    document.querySelector("#owner-delete-actions").hidden = currentStaffRole !== "owner";
   }
   await advancedLoadStaffCases();
   selectedStaffCase = staffCases.get(caseId);
@@ -319,6 +415,49 @@ async function deleteSelectedTestTicket() {
   await advancedLoadStaffCases();
 }
 
+async function deleteSelectedArchivedAppeal() {
+  const submission = selectedStaffCase?.appeal_submissions;
+  if (currentStaffRole !== "owner" || selectedStaffCase?.status !== "closed" || !submission?.id) return;
+  const confirmed = window.confirm(`Permanently delete appeal ${submission.submission_number} and every case, note, message, and activity record attached to it? This cannot be undone.`);
+  if (!confirmed) return;
+
+  const button = document.querySelector("#delete-archived-appeal");
+  const message = document.querySelector("#owner-delete-message");
+  button.disabled = true;
+  button.textContent = "Deleting…";
+  message.hidden = true;
+
+  const { error } = await database.rpc("delete_archived_appeal", {
+    p_submission_id: submission.id
+  });
+
+  if (error) {
+    button.disabled = false;
+    button.textContent = "Delete Appeal Permanently";
+    message.textContent = cleanError(error);
+    message.classList.add("is-error");
+    message.hidden = false;
+    return;
+  }
+
+  stopStaffHistoryRefresh();
+  document.querySelector("#staff-case-dialog")?.close();
+  selectedStaffCase = null;
+  await advancedLoadStaffCases();
+}
+
+document.querySelector("#staff-results")?.addEventListener("input", (event) => {
+  if (!event.target.matches("#staff-case-search")) return;
+  staffSearchQuery = event.target.value.trim().toLowerCase();
+  const viewCases = staffCaseData.filter((item) => activeStaffView === "archive" ? item.status === "closed" : item.status !== "closed");
+  const visibleCases = viewCases.filter(staffCaseMatchesSearch);
+  const emptyCopy = '<div class="empty-state"><strong>No matching appeals</strong><p>Try another applicant name, username, submission number, or case number.</p></div>';
+  const summary = document.querySelector("#staff-search-summary");
+  const list = document.querySelector(".staff-case-list");
+  if (summary) summary.innerHTML = `Showing <strong>${visibleCases.length}</strong> of ${viewCases.length} ${activeStaffView === "archive" ? "archived" : "active"} cases.`;
+  if (list) list.innerHTML = staffCaseListMarkup(visibleCases, emptyCopy);
+});
+
 document.querySelector("#staff-results")?.addEventListener("click", (event) => {
   const viewButton = event.target.closest("[data-staff-view]");
   if (viewButton) {
@@ -338,6 +477,10 @@ document.querySelector("#staff-results")?.addEventListener("click", (event) => {
 document.querySelector("#staff-case-form")?.addEventListener("submit", saveStaffCase);
 document.querySelector("#staff-note-form")?.addEventListener("submit", addPrivateStaffNote);
 document.querySelector("#delete-test-ticket")?.addEventListener("click", deleteSelectedTestTicket);
+document.querySelector("#delete-archived-appeal")?.addEventListener("click", deleteSelectedArchivedAppeal);
+document.querySelector("#staff-case-status")?.addEventListener("change", updateStaffDecisionRequirements);
+document.querySelector("#staff-public-update")?.addEventListener("input", updateStaffDecisionRequirements);
+document.querySelector("#staff-decision-reason")?.addEventListener("input", updateStaffDecisionRequirements);
 document.querySelector("[data-close-staff-dialog]")?.addEventListener("click", () => {
   stopStaffHistoryRefresh();
   document.querySelector("#staff-case-dialog")?.close();
