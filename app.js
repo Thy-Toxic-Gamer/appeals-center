@@ -23,6 +23,7 @@ let selectedStaffCase = null;
 let staffCases = new Map();
 let selectedModerationCase = null;
 let moderationCases = new Map();
+let discordConnected = false;
 
 const form = document.querySelector("#appeal-form");
 const modeButtons = [...document.querySelectorAll("[data-mode]")];
@@ -125,6 +126,17 @@ async function signInWithEmail(event) {
   setAuthMessage(error ? cleanError(error) : "Check your email for the secure sign-in link.", Boolean(error));
 }
 
+async function linkDiscordIdentity() {
+  if (!database || !currentSession) return;
+  rememberClaimParameters();
+  setAuthMessage("Opening Discord connection…");
+  const { error } = await database.auth.linkIdentity({
+    provider: "discord",
+    options: { redirectTo: getRedirectUrl() }
+  });
+  if (error) setAuthMessage(cleanError(error), true);
+}
+
 async function signOut() {
   if (!database) return;
   await database.auth.signOut();
@@ -134,11 +146,17 @@ async function signOut() {
 function renderAuth(session) {
   currentSession = session;
   const identity = session ? getIdentity(session.user) : null;
+  discordConnected = Boolean(session?.user?.identities?.some((item) => item.provider === "discord"));
   document.querySelectorAll("[data-auth-signed-out]").forEach((element) => { element.hidden = Boolean(session); });
   document.querySelectorAll("[data-auth-signed-in]").forEach((element) => { element.hidden = !session; });
   document.querySelectorAll("[data-auth-name]").forEach((element) => { element.textContent = identity?.displayName || ""; });
   document.querySelectorAll("[data-auth-username]").forEach((element) => { element.textContent = identity ? `@${identity.username}` : ""; });
   document.querySelectorAll("[data-auth-provider]").forEach((element) => { element.textContent = identity?.provider === "twitch" ? "Verified through Twitch" : "Verified by email"; });
+  document.querySelectorAll("[data-link-discord]").forEach((button) => { button.hidden = !session || discordConnected; });
+  document.querySelectorAll("[data-discord-status]").forEach((element) => {
+    element.textContent = discordConnected ? "Discord connected · cases sync automatically" : "Connect Discord for automatic case access";
+    element.classList.toggle("is-connected", discordConnected);
+  });
   document.querySelectorAll("[data-auth-avatar]").forEach((element) => {
     if (identity?.avatar) {
       element.src = identity.avatar;
@@ -251,6 +269,22 @@ async function loadModerationCases() {
       return;
     }
     notice = `${caseNumber} is ready to appeal.`;
+  }
+
+  const { data: identityData } = await database.auth.getUserIdentities();
+  discordConnected = Boolean(identityData?.identities?.some((item) => item.provider === "discord"));
+  document.querySelectorAll("[data-link-discord]").forEach((button) => { button.hidden = discordConnected; });
+  document.querySelectorAll("[data-discord-status]").forEach((element) => {
+    element.textContent = discordConnected ? "Discord connected · cases sync automatically" : "Connect Discord for automatic case access";
+    element.classList.toggle("is-connected", discordConnected);
+  });
+
+  if (discordConnected) {
+    const { error: linkError } = await database.rpc("link_my_discord_cases");
+    if (linkError) {
+      results.innerHTML = `<p class="inline-message is-error">${escapeText(cleanError(linkError))}</p>`;
+      return;
+    }
   }
 
   const { data, error } = await database.rpc("my_moderation_cases");
@@ -506,6 +540,7 @@ async function loadStaffCases() {
 modeButtons.forEach((button) => button.addEventListener("click", () => setMode(button.dataset.mode)));
 platformButtons.forEach((button) => button.addEventListener("click", () => togglePlatform(button.dataset.platform)));
 document.querySelectorAll("[data-twitch-sign-in]").forEach((button) => button.addEventListener("click", signInWithTwitch));
+document.querySelectorAll("[data-link-discord]").forEach((button) => button.addEventListener("click", linkDiscordIdentity));
 document.querySelectorAll("[data-sign-out]").forEach((button) => button.addEventListener("click", signOut));
 document.querySelectorAll("[data-email-sign-in]").forEach((emailForm) => emailForm.addEventListener("submit", signInWithEmail));
 document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => document.querySelector("#review-dialog")?.close()));
