@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?release=1.0.54">
+  <link rel="stylesheet" href="styles.css?release=1.0.55">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
-  <script src="app.js?release=1.0.51" defer></script>
-  <script src="staff.js?v=20260904-4" defer></script>
+  <script src="app.js?release=1.0.52" defer></script>
+  <script src="staff.js?v=20260904-5" defer></script>
   <script src="tickets.js?v=20260904-3" defer></script>
 </head>
 <body>
@@ -50,6 +50,16 @@
         <section class="results-list staff-results" id="staff-results" aria-live="polite">
           <div class="loading-state">Loading secure account…</div>
         </section>
+      </section>
+
+      <section class="utility-card dashboard-card staff-card submission-access-card" aria-labelledby="submission-access-title">
+        <div class="section-heading">
+          <div><p class="section-number">PROTECTED ACCESS</p><h2 id="submission-access-title">Submission Blocks &amp; Reviews</h2></div>
+          <p>Active restrictions, private review conversations, resolutions, and the complete audit history.</p>
+        </div>
+        <div id="submission-access-results" aria-live="polite">
+          <div class="loading-state">Loading protected submission-access records…</div>
+        </div>
       </section>
 
       <section class="utility-card dashboard-card staff-card ticket-center-card" aria-labelledby="ticket-center-title">
