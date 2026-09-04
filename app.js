@@ -367,6 +367,15 @@ function selectModerationCase(caseNumber) {
   if (username) username.value = moderationCase.discord_username || moderationCase.discord_display_name || "Discord member";
   if (action) action.value = moderationActionLabel(moderationCase.action_type);
   if (reason) reason.value = String(moderationCase.reason || "").slice(0, 300);
+  if (incidentDate) incidentDate.readOnly = true;
+  if (username) username.readOnly = true;
+  if (action) action.disabled = true;
+  if (reason) reason.readOnly = true;
+  const profile = document.querySelector('[name="discord_profile"]');
+  if (profile) {
+    profile.value = "";
+    profile.readOnly = true;
+  }
 
   renderModerationCases([...moderationCases.values()]);
   document.querySelector("#appeal-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -380,6 +389,8 @@ function clearModerationSelection() {
     existingCase.readOnly = false;
     existingCase.value = "";
   }
+  const incidentDate = document.querySelector("#incident-date");
+  if (incidentDate) incidentDate.readOnly = false;
   renderModerationCases([...moderationCases.values()]);
 }
 
@@ -445,21 +456,30 @@ function renderCases() {
 
 function collectAppeal() {
   const data = new FormData(form);
+  const linkedDiscordCase = selectedModerationCase && selectedPlatforms.length === 1 && selectedPlatforms[0] === "discord"
+    ? selectedModerationCase
+    : null;
   return {
     p_appeal_mode: appealMode,
     p_display_name: data.get("display_name")?.toString().trim(),
-    p_incident_date: data.get("incident_date") || null,
+    p_incident_date: linkedDiscordCase ? String(linkedDiscordCase.created_at).slice(0, 10) : data.get("incident_date") || null,
     p_existing_case_number: data.get("existing_case")?.toString().trim() || null,
     p_explanation: data.get("explanation")?.toString().trim(),
     p_evidence_link: data.get("evidence")?.toString().trim() || null,
     p_declaration_accepted: data.get("declaration") === "on",
-    p_cases: selectedPlatforms.map((platform) => ({
+    p_cases: selectedPlatforms.map((platform) => linkedDiscordCase && platform === "discord" ? {
+      platform: "discord",
+      action_type: moderationActionLabel(linkedDiscordCase.action_type),
+      platform_username: linkedDiscordCase.discord_username || linkedDiscordCase.discord_display_name || "Discord member",
+      profile_url: null,
+      moderation_reason: linkedDiscordCase.reason || null
+    } : {
       platform,
       action_type: data.get(`${platform}_action`)?.toString(),
       platform_username: data.get(`${platform}_username`)?.toString().trim(),
       profile_url: data.get(`${platform}_profile`)?.toString().trim() || null,
       moderation_reason: data.get(`${platform}_reason`)?.toString().trim() || null
-    }))
+    })
   };
 }
 
