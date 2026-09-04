@@ -24,6 +24,7 @@ let staffCases = new Map();
 let selectedModerationCase = null;
 let moderationCases = new Map();
 let discordConnected = false;
+let currentSubmissionBlock = null;
 
 const form = document.querySelector("#appeal-form");
 const modeButtons = [...document.querySelectorAll("[data-mode]")];
@@ -173,9 +174,47 @@ function renderAuth(session) {
   const displayName = document.querySelector("#display-name");
   if (displayName && identity && !displayName.value) displayName.value = identity.displayName;
   document.querySelectorAll("[data-auth-required]").forEach((element) => { element.classList.toggle("is-locked", !session); });
+  loadSubmissionBlockStatus();
   if (document.querySelector("#linked-moderation-cases")) loadModerationCases();
   if (document.querySelector("#status-results")) loadApplicantCases();
   if (document.querySelector("#staff-results")) loadStaffCases();
+}
+
+async function loadSubmissionBlockStatus() {
+  currentSubmissionBlock = null;
+  let notice = document.querySelector("#submission-block-status");
+
+  if (!currentSession) {
+    notice?.remove();
+    return;
+  }
+
+  const { data, error } = await database.rpc("my_submission_block_status");
+  const block = Array.isArray(data) ? data[0] : data;
+
+  if (error || !block?.active) {
+    notice?.remove();
+    return;
+  }
+
+  currentSubmissionBlock = block;
+  if (!notice) {
+    notice = document.createElement("aside");
+    notice.id = "submission-block-status";
+    notice.className = "submission-block-notice";
+    notice.setAttribute("role", "alert");
+    form?.parentNode?.insertBefore(notice, form);
+  }
+
+  const reviewStatus = block.review_number
+    ? `<p><strong>Open private review:</strong> ${escapeText(block.review_number)} · ${escapeText(block.review_status || "open")}</p>`
+    : "<p>Use the <strong>Request Block Review</strong> button in your ThyToxicBot DM to open one private review with staff.</p>";
+
+  notice.innerHTML = `<span>SUBMISSION ACCESS</span>
+    <h3>New submissions are temporarily unavailable</h3>
+    <p>This restriction applies to new appeals, reports, and support tickets connected to this Discord account. Existing cases, messages, and archived records remain available.</p>
+    <p><strong>Reason:</strong> ${escapeText(block.reason || "Contact staff through your private review option.")}</p>
+    ${reviewStatus}`;
 }
 
 function moderationActionLabel(action) {
@@ -562,6 +601,10 @@ form?.addEventListener("submit", (event) => {
   if (!currentSession) {
     setAuthMessage("Sign in with Twitch or email before submitting your appeal.", true);
     document.querySelector("#account-access")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  if (currentSubmissionBlock?.active) {
+    document.querySelector("#submission-block-status")?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   if (!selectedPlatforms.length) {
