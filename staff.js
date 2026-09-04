@@ -175,6 +175,7 @@ async function advancedLoadStaffCases() {
   }
 
   currentStaffRole = role;
+  loadSubmissionAccessRecords();
   const [appealsResult, pendingResult] = await Promise.all([
     database
       .from("appeal_cases")
@@ -411,7 +412,75 @@ async function saveStaffCase(event) {
     document.querySelector("#staff-note-form").hidden = true;
     document.querySelector("#owner-delete-actions").hidden = currentStaffRole !== "owner";
   }
-  await advancedLoadStaffCases();
+  await async function loadSubmissionAccessRecords() {
+  const results = document.querySelector("#submission-access-results");
+  if (!results || !currentSession || !currentStaffRole) return;
+
+  results.innerHTML = '<div class="loading-state">Loading protected submission-access records…</div>';
+  const [blocksResult, reviewsResult, messagesResult, eventsResult] = await Promise.all([
+    database.from("submission_blocks").select("*").order("blocked_at", { ascending: false }).limit(250),
+    database.from("submission_block_reviews").select("*").order("created_at", { ascending: false }).limit(250),
+    database.from("submission_block_review_messages").select("*").order("created_at", { ascending: true }).limit(1000),
+    database.from("submission_block_events").select("*").order("created_at", { ascending: false }).limit(500)
+  ]);
+
+  const failure = blocksResult.error || reviewsResult.error || messagesResult.error || eventsResult.error;
+  if (failure) {
+    results.innerHTML = `<p class="inline-message is-error">${escapeText(cleanError(failure))}</p>`;
+    return;
+  }
+
+  const blocks = blocksResult.data || [];
+  const reviews = reviewsResult.data || [];
+  const messages = messagesResult.data || [];
+  const events = eventsResult.data || [];
+  const activeBlocks = blocks.filter((item) => item.active);
+  const openReviews = reviews.filter((item) => ["open", "claimed"].includes(item.status));
+  const closedReviews = reviews.filter((item) => item.status === "closed");
+
+  const reviewMarkup = (items, emptyText) => items.length ? items.map((review) => {
+    const transcript = messages.filter((message) => message.review_number === review.review_number);
+    return `<details class="submission-review-record">
+      <summary>
+        <span><strong>${escapeText(review.review_number)}</strong><small>@${escapeText(review.discord_username || review.discord_user_id)} · ${new Date(review.created_at).toLocaleString()}</small></span>
+        <b data-status="${escapeText(review.status)}">${escapeText(staffStatusLabel(review.status))}</b>
+      </summary>
+      <div class="submission-review-body">
+        <p><strong>Opening request:</strong> ${escapeText(review.opening_message)}</p>
+        ${review.resolution ? `<p><strong>Resolution:</strong> ${escapeText(review.resolution)}</p>` : ""}
+        <div class="submission-review-transcript">
+          ${transcript.length ? transcript.map((message) => `<article><div><strong>${escapeText(message.sender_role || message.sender_type)}</strong><time>${new Date(message.created_at).toLocaleString()}</time></div><p>${escapeText(message.message)}</p></article>`).join("") : "<p>No transcript messages are stored.</p>"}
+        </div>
+      </div>
+    </details>`;
+  }).join("") : `<div class="empty-state"><strong>${escapeText(emptyText)}</strong></div>`;
+
+  results.innerHTML = `
+    <div class="submission-access-summary">
+      <article><small>Active blocks</small><strong>${activeBlocks.length}</strong></article>
+      <article><small>Open reviews</small><strong>${openReviews.length}</strong></article>
+      <article><small>Closed reviews</small><strong>${closedReviews.length}</strong></article>
+      <article><small>Audit events</small><strong>${events.length}</strong></article>
+    </div>
+    <section class="submission-access-section">
+      <h3>Active Submission Blocks</h3>
+      ${activeBlocks.length ? activeBlocks.map((block) => `<article class="submission-block-record">
+        <div><strong>${escapeText(block.discord_display_name || block.discord_username || block.discord_user_id)}</strong><small>@${escapeText(block.discord_username || "Discord member")} · ID ${escapeText(block.discord_user_id)}</small></div>
+        <p>${escapeText(block.reason)}</p>
+        <small>Applied by @${escapeText(block.blocked_by_username || block.blocked_by_id)} · ${new Date(block.blocked_at).toLocaleString()}</small>
+      </article>`).join("") : '<div class="empty-state"><strong>No active submission blocks</strong></div>'}
+    </section>
+    <section class="submission-access-section">
+      <h3>Open Private Reviews</h3>
+      ${reviewMarkup(openReviews, "No open block reviews")}
+    </section>
+    <section class="submission-access-section">
+      <h3>Archived Private Reviews</h3>
+      ${reviewMarkup(closedReviews, "No archived block reviews")}
+    </section>`;
+}
+
+advancedLoadStaffCases();
   selectedStaffCase = staffCases.get(caseId);
   if (selectedStaffCase) {
     document.querySelector("#staff-case-status").value = selectedStaffCase.status;
