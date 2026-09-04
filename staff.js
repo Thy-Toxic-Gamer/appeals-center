@@ -160,6 +160,7 @@ async function advancedLoadStaffCases() {
   if (!results) return;
   if (!currentSession) {
     results.innerHTML = '<div class="empty-state"><strong>Staff sign-in required</strong><p>Use the verified account that was approved for staff access.</p></div>';
+    loadSubmissionAccessRecords();
     return;
   }
 
@@ -171,6 +172,7 @@ async function advancedLoadStaffCases() {
   }
   if (!role) {
     results.innerHTML = '<div class="empty-state"><strong>Account verified—staff access not assigned</strong><p>This account is not yet on the Appeals Center staff list.</p></div>';
+    loadSubmissionAccessRecords();
     return;
   }
 
@@ -422,7 +424,11 @@ async function saveStaffCase(event) {
 
 async function loadSubmissionAccessRecords() {
   const results = document.querySelector("#submission-access-results");
-  if (!results || !currentSession || !currentStaffRole) return;
+  if (!results) return;
+  if (!currentSession || !currentStaffRole) {
+    results.innerHTML = '<div class="empty-state"><strong>Staff sign-in required</strong><p>Sign in with an approved staff account to review submission blocks and private conversations.</p></div>';
+    return;
+  }
 
   results.innerHTML = '<div class="loading-state">Loading protected submission-access records…</div>';
   const [blocksResult, reviewsResult, messagesResult, eventsResult] = await Promise.all([
