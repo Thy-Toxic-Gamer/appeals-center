@@ -412,7 +412,15 @@ async function saveStaffCase(event) {
     document.querySelector("#staff-note-form").hidden = true;
     document.querySelector("#owner-delete-actions").hidden = currentStaffRole !== "owner";
   }
-  await async function loadSubmissionAccessRecords() {
+  await advancedLoadStaffCases();
+  selectedStaffCase = staffCases.get(caseId);
+  if (selectedStaffCase) {
+    document.querySelector("#staff-case-status").value = selectedStaffCase.status;
+    queueStaffHistoryRefresh(caseId);
+  }
+}
+
+async function loadSubmissionAccessRecords() {
   const results = document.querySelector("#submission-access-results");
   if (!results || !currentSession || !currentStaffRole) return;
 
@@ -478,14 +486,6 @@ async function saveStaffCase(event) {
       <h3>Archived Private Reviews</h3>
       ${reviewMarkup(closedReviews, "No archived block reviews")}
     </section>`;
-}
-
-advancedLoadStaffCases();
-  selectedStaffCase = staffCases.get(caseId);
-  if (selectedStaffCase) {
-    document.querySelector("#staff-case-status").value = selectedStaffCase.status;
-    queueStaffHistoryRefresh(caseId);
-  }
 }
 
 async function addPrivateStaffNote(event) {
