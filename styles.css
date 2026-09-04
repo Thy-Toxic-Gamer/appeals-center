@@ -500,3 +500,61 @@ input::placeholder, textarea::placeholder { color: #657069; }
 .submission-block-notice strong {
   color: var(--text);
 }
+
+
+.submission-access-card { grid-column: 1 / -1; }
+.submission-access-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.submission-access-summary article,
+.submission-block-record,
+.submission-review-record {
+  border: 1px solid var(--line);
+  background: rgba(8, 13, 10, .72);
+}
+.submission-access-summary article { padding: 16px; }
+.submission-access-summary small,
+.submission-block-record small,
+.submission-review-record small { color: var(--muted); }
+.submission-access-summary strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--pink);
+  font: 800 1.6rem/1 var(--display);
+}
+.submission-access-section { margin-top: 24px; }
+.submission-access-section h3 { margin-bottom: 12px; }
+.submission-block-record { padding: 16px; margin-top: 10px; }
+.submission-block-record div { display: flex; flex-direction: column; }
+.submission-block-record p { margin: 10px 0; }
+.submission-review-record { margin-top: 10px; }
+.submission-review-record summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  cursor: pointer;
+}
+.submission-review-record summary span { display: flex; flex-direction: column; }
+.submission-review-body { padding: 0 16px 16px; }
+.submission-review-transcript article {
+  margin-top: 10px;
+  padding: 12px;
+  border-left: 3px solid var(--toxic);
+  background: rgba(255,255,255,.025);
+}
+.submission-review-transcript article div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.submission-review-transcript p { margin: 6px 0 0; white-space: pre-wrap; }
+@media (max-width: 760px) {
+  .submission-access-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .submission-review-record summary,
+  .submission-review-transcript article div { align-items: flex-start; flex-direction: column; }
+}
