@@ -53,6 +53,9 @@ function cleanError(error) {
   if (message.includes("submit_appeal") && message.includes("schema cache")) {
     return "The final database setup step has not been applied yet.";
   }
+  if (message.toLowerCase().includes("manual linking is disabled")) {
+    return "Discord linking is still disabled in Supabase. Enable Manual Linking under Authentication → Sign In / Providers, save, then refresh this page.";
+  }
   return message.replace(/^Error:\s*/i, "");
 }
 
