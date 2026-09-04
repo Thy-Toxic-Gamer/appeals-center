@@ -16,6 +16,7 @@
   let typeView = "all";
   let searchValue = "";
   let selectedTicket = null;
+  let signedInStaffRole = null;
 
   const clean = (value) => escapeText(String(value ?? ""));
   const results = () => document.querySelector("#ticket-center-results");
@@ -104,12 +105,13 @@
     }
     const { data, error } = await database
       .from("support_tickets")
-      .select("id,ticket_number,ticket_type,subject,opening_message,status,discord_channel_id,discord_creator_id,discord_creator_username,discord_creator_display_name,claimed_by_discord_id,claimed_by_username,claimed_at,closed_by_discord_id,closed_by_username,close_summary,closed_at,transcript_text,transcript_discord_message_id,transcript_saved_at,created_at")
+      .select("id,ticket_number,ticket_type,subject,opening_message,status,discord_channel_id,discord_creator_id,discord_creator_username,discord_creator_display_name,claimed_by_discord_id,claimed_by_username,claimed_at,closed_by_discord_id,closed_by_username,close_summary,closed_at,transcript_text,transcript_discord_message_id,transcript_saved_at,purge_after,created_at")
       .order("created_at", { ascending: false });
     if (error) {
       target.innerHTML = `<p class="inline-message is-error">${clean(error.message)}</p>`;
       return;
     }
+    signedInStaffRole = role;
     tickets = data || [];
     renderTickets();
   }
@@ -130,9 +132,15 @@
         <article><small>Opened by</small><strong>${clean(selectedTicket.discord_creator_display_name || selectedTicket.discord_creator_username || selectedTicket.discord_creator_id)}</strong><p>Discord ID: ${clean(selectedTicket.discord_creator_id)}</p></article>
         <article><small>Handled by</small><strong>${clean(selectedTicket.claimed_by_username || "Not claimed")}</strong><p>${selectedTicket.claimed_at ? new Date(selectedTicket.claimed_at).toLocaleString() : "Waiting for staff"}</p></article>
         <article class="wide"><small>Subject</small><strong>${clean(selectedTicket.subject)}</strong><p>${clean(selectedTicket.opening_message)}</p></article>
-        <article class="wide"><small>Timeline</small><p>Opened: ${new Date(selectedTicket.created_at).toLocaleString()}${selectedTicket.closed_at ? ` · Closed: ${new Date(selectedTicket.closed_at).toLocaleString()}` : " · Currently active"}</p></article>
+        <article class="wide"><small>Timeline</small><p>Opened: ${new Date(selectedTicket.created_at).toLocaleString()}${selectedTicket.closed_at ? ` · Closed: ${new Date(selectedTicket.closed_at).toLocaleString()}` : " · Currently active"}${selectedTicket.purge_after ? ` · Auto-deletes: ${new Date(selectedTicket.purge_after).toLocaleDateString()}` : ""}</p></article>
         ${selectedTicket.close_summary ? `<article class="wide"><small>Final resolution</small><p>${clean(selectedTicket.close_summary)}</p></article>` : ""}
       </div>
+      ${signedInStaffRole === "owner" && selectedTicket.status === "closed" ? `
+      <section class="owner-delete-actions ticket-owner-delete">
+        <div><strong>Owner archive control</strong><p>Permanently delete this ticket, transcript, and activity record before its six-month expiration.</p></div>
+        <button class="button button-danger" type="button" id="delete-archived-ticket">Delete Ticket Permanently</button>
+        <p class="staff-form-message" id="ticket-delete-message" hidden></p>
+      </section>` : ""}
       <section class="ticket-transcript-panel">
         <div class="panel-heading"><div><span>Protected transcript</span><small>${selectedTicket.transcript_saved_at ? "Saved " + new Date(selectedTicket.transcript_saved_at).toLocaleString() : "Available after the ticket closes"}</small></div></div>
         ${selectedTicket.transcript_text
@@ -140,6 +148,40 @@
           : '<div class="empty-state"><strong>Ticket still active</strong><p>The complete Discord transcript is saved here before its temporary channel is deleted.</p></div>'}
       </section>`;
     dialog.showModal();
+  }
+
+  async function deleteArchivedTicket() {
+    if (!selectedTicket || signedInStaffRole !== "owner" || selectedTicket.status !== "closed") return;
+    const confirmed = window.confirm(
+      "Permanently delete " + selectedTicket.ticket_number +
+      " and its transcript? This cannot be undone.",
+    );
+    if (!confirmed) return;
+    const button = document.querySelector("#delete-archived-ticket");
+    const message = document.querySelector("#ticket-delete-message");
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Deleting…";
+    }
+    const { error } = await database.rpc("owner_delete_archived_ticket", {
+      p_ticket_id: selectedTicket.id,
+    });
+    if (error) {
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Delete Ticket Permanently";
+      }
+      if (message) {
+        message.textContent = cleanError(error);
+        message.classList.add("is-error");
+        message.hidden = false;
+      }
+      return;
+    }
+    tickets = tickets.filter((ticket) => ticket.id !== selectedTicket.id);
+    document.querySelector("#ticket-record-dialog")?.close();
+    selectedTicket = null;
+    renderTickets();
   }
 
   function downloadTranscript() {
@@ -176,6 +218,7 @@
       return;
     }
     if (event.target.closest("#download-ticket-transcript")) downloadTranscript();
+    if (event.target.closest("#delete-archived-ticket")) deleteArchivedTicket();
   });
 
   document.addEventListener("input", (event) => {
