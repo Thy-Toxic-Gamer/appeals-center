@@ -21,6 +21,8 @@ let pendingAppeal = null;
 let currentStaffRole = null;
 let selectedStaffCase = null;
 let staffCases = new Map();
+let selectedModerationCase = null;
+let moderationCases = new Map();
 
 const form = document.querySelector("#appeal-form");
 const modeButtons = [...document.querySelectorAll("[data-mode]")];
@@ -54,7 +56,7 @@ function cleanError(error) {
 }
 
 function getRedirectUrl() {
-  return `${window.location.origin}${window.location.pathname}`;
+  return `${window.location.origin}${window.location.pathname}${window.location.search}`;
 }
 
 function getIdentity(user) {
@@ -126,11 +128,164 @@ function renderAuth(session) {
   const displayName = document.querySelector("#display-name");
   if (displayName && identity && !displayName.value) displayName.value = identity.displayName;
   document.querySelectorAll("[data-auth-required]").forEach((element) => { element.classList.toggle("is-locked", !session); });
+  if (document.querySelector("#linked-moderation-cases")) loadModerationCases();
   if (document.querySelector("#status-results")) loadApplicantCases();
   if (document.querySelector("#staff-results")) loadStaffCases();
 }
 
+function moderationActionLabel(action) {
+  return {
+    warn: "Warning",
+    mute: "Timeout / Mute",
+    kick: "Kick",
+    ban: "Ban",
+    automod: "Other moderation action"
+  }[action] || "Other moderation action";
+}
+
+function formatModerationDuration(seconds) {
+  if (!seconds) return "No duration";
+  const units = [
+    [86400, "day"],
+    [3600, "hour"],
+    [60, "minute"]
+  ];
+  for (const [unitSeconds, label] of units) {
+    if (seconds % unitSeconds === 0) {
+      const amount = seconds / unitSeconds;
+      return `${amount} ${label}${amount === 1 ? "" : "s"}`;
+    }
+  }
+  return `${seconds} seconds`;
+}
+
+function clearClaimParameters() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("case");
+  url.searchParams.delete("claim");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function renderModerationCases(cases, notice = "") {
+  const panel = document.querySelector("#linked-moderation-cases");
+  const results = document.querySelector("#moderation-case-results");
+  if (!panel || !results) return;
+
+  panel.hidden = false;
+  moderationCases = new Map((cases || []).map((item) => [item.case_number, item]));
+
+  if (!cases?.length) {
+    results.innerHTML = `<div class="linked-case-empty"><strong>${notice ? escapeText(notice) : "No appeal-ready Discord cases"}</strong><p>New eligible moderation actions will appear here when you open the secure link sent by ThyToxicBot.</p></div>`;
+    return;
+  }
+
+  const noticeMarkup = notice
+    ? `<p class="linked-case-notice">${escapeText(notice)}</p>`
+    : "";
+  results.innerHTML = noticeMarkup + cases.map((item) => {
+    const selected = selectedModerationCase?.case_number === item.case_number;
+    return `<article class="linked-case-card${selected ? " is-selected" : ""}">
+      <div class="linked-case-copy">
+        <div><strong>${escapeText(item.case_number)}</strong><span>${escapeText(moderationActionLabel(item.action_type))}</span></div>
+        <p>${escapeText(item.reason)}</p>
+        <small>${new Date(item.created_at).toLocaleDateString()} · ${escapeText(formatModerationDuration(Number(item.duration_seconds || 0)))}</small>
+      </div>
+      <button class="button button-primary" type="button" data-appeal-moderation-case="${escapeText(item.case_number)}">${selected ? "Case selected" : "Appeal this case"} <span aria-hidden="true">→</span></button>
+    </article>`;
+  }).join("");
+}
+
+async function loadModerationCases() {
+  const panel = document.querySelector("#linked-moderation-cases");
+  const results = document.querySelector("#moderation-case-results");
+  if (!panel || !results) return;
+
+  if (!currentSession) {
+    const parameters = new URLSearchParams(window.location.search);
+    panel.hidden = !(parameters.get("case") && parameters.get("claim"));
+    if (!panel.hidden) {
+      results.innerHTML = '<div class="linked-case-empty"><strong>Sign in to open your private case</strong><p>After Twitch sign-in, this secure ticket will appear here automatically.</p></div>';
+    }
+    return;
+  }
+
+  panel.hidden = false;
+  results.innerHTML = '<div class="loading-state">Loading your Discord cases…</div>';
+
+  let notice = "";
+  const parameters = new URLSearchParams(window.location.search);
+  const caseNumber = parameters.get("case");
+  const claimToken = parameters.get("claim");
+
+  if (caseNumber && claimToken) {
+    const { error: claimError } = await database.rpc("claim_moderation_case", {
+      p_case_number: caseNumber,
+      p_claim_token: claimToken
+    });
+    clearClaimParameters();
+    if (claimError) {
+      results.innerHTML = `<p class="inline-message is-error">${escapeText(cleanError(claimError))}</p>`;
+      return;
+    }
+    notice = `${caseNumber} is ready to appeal.`;
+  }
+
+  const { data, error } = await database.rpc("my_moderation_cases");
+  if (error) {
+    results.innerHTML = `<p class="inline-message is-error">${escapeText(cleanError(error))}</p>`;
+    return;
+  }
+  renderModerationCases(data || [], notice);
+}
+
+function selectModerationCase(caseNumber) {
+  const moderationCase = moderationCases.get(caseNumber);
+  if (!moderationCase) return;
+
+  selectedModerationCase = moderationCase;
+  appealMode = "individual";
+  selectedPlatforms = ["discord"];
+  modeButtons.forEach((button) => {
+    const active = button.dataset.mode === "individual";
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  if (guidance) guidance.textContent = "This Discord case is linked to your secure appeal ticket.";
+  syncPlatformButtons();
+  renderCases();
+
+  const existingCase = document.querySelector("#existing-case");
+  const incidentDate = document.querySelector("#incident-date");
+  const username = document.querySelector('[name="discord_username"]');
+  const action = document.querySelector('[name="discord_action"]');
+  const reason = document.querySelector('[name="discord_reason"]');
+
+  if (existingCase) {
+    existingCase.value = moderationCase.case_number;
+    existingCase.readOnly = true;
+  }
+  if (incidentDate) incidentDate.value = String(moderationCase.created_at).slice(0, 10);
+  if (username) username.value = moderationCase.discord_username || moderationCase.discord_display_name || "Discord member";
+  if (action) action.value = moderationActionLabel(moderationCase.action_type);
+  if (reason) reason.value = String(moderationCase.reason || "").slice(0, 300);
+
+  renderModerationCases([...moderationCases.values()]);
+  document.querySelector("#appeal-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function clearModerationSelection() {
+  if (!selectedModerationCase) return;
+  selectedModerationCase = null;
+  const existingCase = document.querySelector("#existing-case");
+  if (existingCase) {
+    existingCase.readOnly = false;
+    existingCase.value = "";
+  }
+  renderModerationCases([...moderationCases.values()]);
+}
+
 function setMode(mode) {
+  clearModerationSelection();
   appealMode = mode;
   modeButtons.forEach((button) => {
     const active = button.dataset.mode === mode;
@@ -144,6 +299,7 @@ function setMode(mode) {
 }
 
 function togglePlatform(platform) {
+  clearModerationSelection();
   if (appealMode === "individual") {
     selectedPlatforms = selectedPlatforms[0] === platform ? [] : [platform];
   } else if (selectedPlatforms.includes(platform)) {
@@ -232,7 +388,17 @@ async function submitReviewedAppeal() {
   button.disabled = true;
   button.textContent = "Submitting…";
   result.hidden = true;
-  const { data, error } = await database.rpc("submit_appeal", pendingAppeal);
+  const linkedCaseNumber = selectedModerationCase?.case_number || null;
+  const request = linkedCaseNumber
+    ? database.rpc("submit_moderation_case_appeal", {
+        p_case_number: linkedCaseNumber,
+        p_display_name: pendingAppeal.p_display_name,
+        p_explanation: pendingAppeal.p_explanation,
+        p_evidence_link: pendingAppeal.p_evidence_link,
+        p_declaration_accepted: pendingAppeal.p_declaration_accepted
+      })
+    : database.rpc("submit_appeal", pendingAppeal);
+  const { data, error } = await request;
   if (error) {
     result.textContent = cleanError(error);
     result.classList.add("is-error");
@@ -249,10 +415,14 @@ async function submitReviewedAppeal() {
   const dialogNotice = document.querySelector("#review-dialog .dialog-notice");
   if (dialogNotice) dialogNotice.innerHTML = '<strong>Saved securely</strong><p>Your authenticated account is linked to these cases.</p>';
   pendingAppeal = null;
+  selectedModerationCase = null;
   form.reset();
+  const existingCase = document.querySelector("#existing-case");
+  if (existingCase) existingCase.readOnly = false;
   selectedPlatforms = [];
   syncPlatformButtons();
   renderCases();
+  loadModerationCases();
 }
 
 async function loadApplicantCases() {
@@ -317,6 +487,10 @@ document.querySelectorAll("[data-sign-out]").forEach((button) => button.addEvent
 document.querySelectorAll("[data-email-sign-in]").forEach((emailForm) => emailForm.addEventListener("submit", signInWithEmail));
 document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => document.querySelector("#review-dialog")?.close()));
 document.querySelector("#submit-reviewed-appeal")?.addEventListener("click", submitReviewedAppeal);
+document.querySelector("#moderation-case-results")?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-appeal-moderation-case]");
+  if (button) selectModerationCase(button.dataset.appealModerationCase);
+});
 
 const explanation = document.querySelector("#explanation");
 const explanationCount = document.querySelector("#explanation-count");
