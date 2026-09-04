@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?release=1.0.48">
+  <link rel="stylesheet" href="styles.css?release=1.0.51">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
-  <script src="app.js" defer></script>
-  <script src="staff.js?v=20260901-3" defer></script>
+  <script src="app.js?release=1.0.51" defer></script>
+  <script src="staff.js?v=20260904-1" defer></script>
 </head>
 <body>
   <div class="site-shell">
@@ -61,7 +61,13 @@
 
     <section class="archive-case-notice" id="archive-case-notice" hidden>
       <strong>Archived case</strong>
-      <p>This appeal is closed and read-only. Its complete protected record remains available here until scheduled retention removes it.</p>
+      <p>This appeal is closed and read-only. It will be permanently removed one year after it was archived.</p>
+    </section>
+
+    <section class="owner-delete-actions" id="owner-delete-actions" hidden>
+      <div><strong>Owner archive control</strong><p>Permanently delete this entire archived appeal, including its cases, notes, messages, and activity history.</p></div>
+      <button class="button button-danger" type="button" id="delete-archived-appeal">Delete Appeal Permanently</button>
+      <p class="staff-form-message" id="owner-delete-message" hidden></p>
     </section>
 
     <section class="test-ticket-actions" id="test-ticket-actions" hidden>
@@ -84,9 +90,9 @@
               <option value="closed">Closed</option>
             </select>
           </label>
-          <label><span>Decision reason</span><textarea name="decision_reason" id="staff-decision-reason" rows="4" maxlength="3000" placeholder="Required when approving or denying"></textarea></label>
+          <label><span>Decision reason</span><textarea name="decision_reason" id="staff-decision-reason" rows="4" minlength="5" maxlength="3000" aria-describedby="staff-decision-help" placeholder="Explain why the appeal is being approved or denied"></textarea><small class="field-help" id="staff-decision-help">Required for approval or denial: 5–3,000 characters. <b id="staff-decision-count">0</b> / 3,000</small></label>
         </div>
-        <label><span>Applicant-visible update</span><textarea name="public_update" id="staff-public-update" rows="4" maxlength="3000" placeholder="This message appears on the applicant's status page"></textarea></label>
+        <label><span>Applicant-visible update</span><textarea name="public_update" id="staff-public-update" rows="4" minlength="5" maxlength="3000" aria-describedby="staff-public-help" placeholder="This message appears on the applicant's status page"></textarea><small class="field-help" id="staff-public-help">Required for information requests, approval, denial, or closure: 5–3,000 characters. <b id="staff-public-count">0</b> / 3,000</small></label>
         <button class="button button-primary" type="submit">Save Case Update <span aria-hidden="true">→</span></button>
         <p class="staff-form-message" id="staff-case-message" hidden></p>
       </form>
