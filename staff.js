@@ -102,6 +102,16 @@ function renderStaffCaseQueue() {
       ${currentStaffRole === "owner" ? '<button class="button button-secondary" type="button" data-create-test-ticket>Create Test Ticket</button>' : ""}
     </div>
     <p class="staff-form-message" id="staff-test-message" hidden></p>
+    ${currentStaffRole === "owner" ? `
+      <section class="owner-counter-tool" aria-labelledby="owner-counter-title">
+        <div>
+          <small>Owner tool</small>
+          <strong id="owner-counter-title">Moderation Ticket Counter</strong>
+          <p>Reset numbering to <b>TTG-MOD-000001</b>. Existing cases keep their numbers, and numbers already in use are automatically skipped.</p>
+        </div>
+        <button class="button button-danger" type="button" data-reset-ticket-counter>Reset Ticket Counter</button>
+        <p class="staff-form-message" id="ticket-counter-message" hidden></p>
+      </section>` : ""}
     <div class="staff-search-panel">
       <label for="staff-case-search"><span>Search cases and appeal history</span><input id="staff-case-search" type="search" value="${escapeText(staffSearchQuery)}" placeholder="Name, username, case, or submission number" autocomplete="off"></label>
       <p id="staff-search-summary">Showing <strong>${visibleCases.length}</strong> of ${viewCases.length} ${viewLabel} cases.</p>
@@ -466,6 +476,38 @@ async function createTestTicket(button) {
   if (newCase) openStaffCase(newCase.id);
 }
 
+async function resetModerationTicketCounter(button) {
+  if (currentStaffRole !== "owner") return;
+  const confirmed = window.confirm("Reset the moderation ticket counter to TTG-MOD-000001? Existing cases will not be changed, and ticket numbers already in use will be skipped.");
+  if (!confirmed) return;
+
+  const message = document.querySelector("#ticket-counter-message");
+  button.disabled = true;
+  button.textContent = "Resetting…";
+  if (message) {
+    message.hidden = true;
+    message.textContent = "";
+    message.classList.remove("is-error");
+  }
+
+  const { error } = await database.rpc("reset_moderation_ticket_counter");
+
+  button.disabled = false;
+  button.textContent = "Reset Ticket Counter";
+  if (!message) return;
+
+  if (error) {
+    message.textContent = cleanError(error);
+    message.classList.add("is-error");
+    message.hidden = false;
+    return;
+  }
+
+  message.textContent = "Counter reset. The next moderation ticket will start at TTG-MOD-000001, skipping any number already in use.";
+  message.classList.remove("is-error");
+  message.hidden = false;
+}
+
 async function deleteSelectedTestTicket() {
   const submission = selectedStaffCase?.appeal_submissions;
   if (currentStaffRole !== "owner" || !submission?.is_test) return;
@@ -586,6 +628,11 @@ document.querySelector("#staff-results")?.addEventListener("click", (event) => {
   const createButton = event.target.closest("[data-create-test-ticket]");
   if (createButton) {
     createTestTicket(createButton);
+    return;
+  }
+  const resetCounterButton = event.target.closest("[data-reset-ticket-counter]");
+  if (resetCounterButton) {
+    resetModerationTicketCounter(resetCounterButton);
     return;
   }
   const pendingButton = event.target.closest("[data-open-pending-case]");
