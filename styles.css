@@ -467,3 +467,36 @@ input::placeholder, textarea::placeholder { color: #657069; }
   .ticket-record-grid { grid-template-columns: 1fr; }
   .ticket-status-tabs button, .ticket-type-tabs button { flex: 1 1 auto; }
 }
+
+
+.submission-block-notice {
+  margin: 0 0 24px;
+  padding: 22px;
+  border: 1px solid rgba(255, 62, 152, .55);
+  border-left: 4px solid var(--pink);
+  background: linear-gradient(135deg, rgba(255, 62, 152, .12), rgba(8, 13, 10, .96));
+  box-shadow: 0 0 28px rgba(255, 62, 152, .1);
+}
+
+.submission-block-notice > span {
+  color: var(--pink);
+  font-family: var(--display);
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.submission-block-notice h3 {
+  margin: 8px 0 12px;
+  color: var(--text);
+}
+
+.submission-block-notice p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.submission-block-notice strong {
+  color: var(--text);
+}
