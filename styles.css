@@ -236,6 +236,13 @@ input::placeholder, textarea::placeholder { color: #657069; }
 .staff-toolbar { display: flex; align-items: stretch; justify-content: space-between; gap: 12px; }
 .staff-toolbar .staff-role { flex: 1; display: flex; align-items: center; gap: 4px; }
 .staff-toolbar .button { min-height: 42px; }
+.owner-counter-tool { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; margin-top: 14px; padding: 18px 20px; border: 1px solid rgba(255,62,152,.38); border-left: 3px solid #ff3e98; background: rgba(255,62,152,.045); }
+.owner-counter-tool > div { display: grid; gap: 5px; }
+.owner-counter-tool small { color: #ff9dc9; font-size: 8px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.owner-counter-tool strong { color: #ffd5e8; font: italic 800 21px/1 var(--display); text-transform: uppercase; }
+.owner-counter-tool p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.owner-counter-tool p b { color: #ff9dc9; }
+.owner-counter-tool .staff-form-message { grid-column: 1 / -1; }
 .staff-search-panel { display: grid; grid-template-columns: minmax(260px, 1fr) auto; align-items: end; gap: 14px; margin-top: 14px; padding: 16px; border: 1px solid rgba(73,216,255,.22); background: rgba(73,216,255,.035); }
 .staff-search-panel label { gap: 7px; }
 .staff-search-panel input { border-color: rgba(73,216,255,.28); }
@@ -355,7 +362,7 @@ input::placeholder, textarea::placeholder { color: #657069; }
   .dashboard-page { padding: 34px 0; }
   .submission-heading, .status-case, .staff-case-row { align-items: start; grid-template-columns: 1fr; }
   .staff-case-dialog { padding: 28px 20px; }
-  .staff-toolbar, .test-ticket-actions, .owner-delete-actions { align-items: stretch; grid-template-columns: 1fr; flex-direction: column; }
+  .staff-toolbar, .test-ticket-actions, .owner-delete-actions, .owner-counter-tool { align-items: stretch; grid-template-columns: 1fr; flex-direction: column; }
   .staff-search-panel { grid-template-columns: 1fr; align-items: stretch; }
   .staff-search-panel p { margin: 0; white-space: normal; }
   .staff-view-tabs { grid-template-columns: 1fr; }
