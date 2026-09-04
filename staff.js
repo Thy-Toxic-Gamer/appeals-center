@@ -5,7 +5,15 @@ function staffStatusLabel(status) {
 let staffHistoryRefreshTimer = null;
 let staffHistoryPollTimer = null;
 let staffCaseData = [];
-let activeStaffView = window.location.hash === "#archive" ? "archive" : "open";
+let staffPendingModerationData = [];
+let pendingModerationCases = new Map();
+let selectedPendingModerationCase = null;
+let pendingModerationSetupError = "";
+let activeStaffView = window.location.hash === "#archive"
+  ? "archive"
+  : window.location.hash === "#active"
+    ? "open"
+    : "waiting";
 let staffSearchQuery = "";
 
 function staffApplicantKey(item) {
@@ -39,6 +47,18 @@ function staffCaseMatchesSearch(item) {
   return searchable.includes(staffSearchQuery);
 }
 
+function pendingModerationCaseMatchesSearch(item) {
+  if (!staffSearchQuery) return true;
+  return [
+    item.discord_display_name,
+    item.discord_username,
+    item.discord_user_id,
+    item.case_number,
+    item.action_type,
+    item.reason
+  ].join(" ").toLowerCase().includes(staffSearchQuery);
+}
+
 function staffCaseListMarkup(cases, emptyCopy) {
   if (!cases.length) return emptyCopy;
   return cases.map((item) => {
@@ -48,19 +68,33 @@ function staffCaseListMarkup(cases, emptyCopy) {
   }).join("");
 }
 
+function pendingModerationListMarkup(cases, emptyCopy) {
+  if (!cases.length) return emptyCopy;
+  return cases.map((item) => `<button class="staff-case-row is-awaiting" type="button" data-open-pending-case="${escapeText(item.id)}"><div><strong>${escapeText(item.case_number)}</strong><small>${escapeText(item.discord_display_name || item.discord_username || "Discord member")} · @${escapeText(item.discord_username)} · ${escapeText(staffStatusLabel(item.action_type))}</small><small class="appeal-history-count">${item.account_connected ? "Discord account connected" : item.dm_delivered ? "Appeal link delivered by DM" : "DM delivery failed"} · No appeal submitted</small></div><span data-status="waiting">Awaiting appeal</span><em>View case →</em></button>`).join("");
+}
+
 function renderStaffCaseQueue() {
   const results = document.querySelector("#staff-results");
   if (!results || !currentStaffRole) return;
 
   const openCases = staffCaseData.filter((item) => item.status !== "closed");
   const archivedCases = staffCaseData.filter((item) => item.status === "closed");
-  const viewCases = activeStaffView === "archive" ? archivedCases : openCases;
-  const visibleCases = viewCases.filter(staffCaseMatchesSearch);
+  const viewCases = activeStaffView === "waiting"
+    ? staffPendingModerationData
+    : activeStaffView === "archive"
+      ? archivedCases
+      : openCases;
+  const visibleCases = viewCases.filter(activeStaffView === "waiting" ? pendingModerationCaseMatchesSearch : staffCaseMatchesSearch);
+  const viewLabel = activeStaffView === "waiting" ? "awaiting-appeal" : activeStaffView === "archive" ? "archived" : "active";
   const emptyCopy = staffSearchQuery
     ? '<div class="empty-state"><strong>No matching appeals</strong><p>Try another applicant name, username, submission number, or case number.</p></div>'
-    : activeStaffView === "archive"
-      ? '<div class="empty-state"><strong>No archived cases</strong><p>Closed appeals will move here with their complete protected record.</p></div>'
-      : '<div class="empty-state"><strong>No cases in the queue</strong><p>New and active appeals will appear here.</p></div>';
+    : activeStaffView === "waiting"
+      ? pendingModerationSetupError
+        ? `<div class="empty-state"><strong>Awaiting-Appeal setup required</strong><p>${escapeText(pendingModerationSetupError)}</p></div>`
+        : '<div class="empty-state"><strong>No cases awaiting appeal</strong><p>New appealable ThyToxicBot actions will appear here before a member submits an appeal.</p></div>'
+      : activeStaffView === "archive"
+        ? '<div class="empty-state"><strong>No archived cases</strong><p>Closed appeals will move here with their complete protected record.</p></div>'
+        : '<div class="empty-state"><strong>No cases in the queue</strong><p>New and active appeals will appear here.</p></div>';
 
   results.innerHTML = `
     <div class="staff-toolbar">
@@ -69,15 +103,16 @@ function renderStaffCaseQueue() {
     </div>
     <p class="staff-form-message" id="staff-test-message" hidden></p>
     <div class="staff-search-panel">
-      <label for="staff-case-search"><span>Search appeal history</span><input id="staff-case-search" type="search" value="${escapeText(staffSearchQuery)}" placeholder="Name, username, submission, or case number" autocomplete="off"></label>
-      <p id="staff-search-summary">Showing <strong>${visibleCases.length}</strong> of ${viewCases.length} ${activeStaffView === "archive" ? "archived" : "active"} cases.</p>
+      <label for="staff-case-search"><span>Search cases and appeal history</span><input id="staff-case-search" type="search" value="${escapeText(staffSearchQuery)}" placeholder="Name, username, case, or submission number" autocomplete="off"></label>
+      <p id="staff-search-summary">Showing <strong>${visibleCases.length}</strong> of ${viewCases.length} ${viewLabel} cases.</p>
     </div>
     <div class="staff-view-tabs" role="tablist" aria-label="Appeal case lists">
+      <button type="button" role="tab" aria-selected="${activeStaffView === "waiting"}" class="${activeStaffView === "waiting" ? "is-active" : ""}" data-staff-view="waiting">Awaiting Appeal <span>${staffPendingModerationData.length}</span></button>
       <button type="button" role="tab" aria-selected="${activeStaffView === "open"}" class="${activeStaffView === "open" ? "is-active" : ""}" data-staff-view="open">Active Appeals <span>${openCases.length}</span></button>
       <button type="button" role="tab" aria-selected="${activeStaffView === "archive"}" class="${activeStaffView === "archive" ? "is-active" : ""}" data-staff-view="archive">Archive <span>${archivedCases.length}</span></button>
     </div>
     <div class="staff-case-list">
-      ${staffCaseListMarkup(visibleCases, emptyCopy)}
+      ${activeStaffView === "waiting" ? pendingModerationListMarkup(visibleCases, emptyCopy) : staffCaseListMarkup(visibleCases, emptyCopy)}
     </div>`;
 }
 
@@ -130,23 +165,71 @@ async function advancedLoadStaffCases() {
   }
 
   currentStaffRole = role;
-  const { data, error } = await database
-    .from("appeal_cases")
-    .select("id, case_number, platform, action_type, platform_username, profile_url, moderation_reason, status, applicant_update, decision_reason, created_at, closed_at, purge_after, appeal_submissions(id, applicant_id, submission_number, display_name, incident_date, existing_case_number, explanation, evidence_link, is_test, created_at)")
-    .order("created_at", { ascending: false })
-    .limit(1000);
+  const [appealsResult, pendingResult] = await Promise.all([
+    database
+      .from("appeal_cases")
+      .select("id, case_number, platform, action_type, platform_username, profile_url, moderation_reason, status, applicant_update, decision_reason, created_at, closed_at, purge_after, appeal_submissions(id, applicant_id, submission_number, display_name, incident_date, existing_case_number, explanation, evidence_link, is_test, created_at)")
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    database.rpc("staff_pending_moderation_cases")
+  ]);
 
-  if (error) {
-    results.innerHTML = `<p class="inline-message is-error">${escapeText(cleanError(error))}</p>`;
+  if (appealsResult.error) {
+    results.innerHTML = `<p class="inline-message is-error">${escapeText(cleanError(appealsResult.error))}</p>`;
     return;
   }
 
-  staffCaseData = data || [];
+  staffCaseData = appealsResult.data || [];
+  pendingModerationSetupError = pendingResult.error
+    ? "Run migration 008_pending_moderation_queue.sql in the Appeals Supabase project, then refresh this page."
+    : "";
+  staffPendingModerationData = pendingResult.error ? [] : pendingResult.data || [];
   staffCases = new Map(staffCaseData.map((item) => [item.id, item]));
+  pendingModerationCases = new Map(staffPendingModerationData.map((item) => [item.id, item]));
   renderStaffCaseQueue();
 }
 
 loadStaffCases = advancedLoadStaffCases;
+
+function staffDurationLabel(seconds) {
+  if (seconds === null || seconds === undefined) return "Not applicable";
+  const total = Number(seconds);
+  if (!Number.isFinite(total) || total <= 0) return "No duration recorded";
+  if (total % 86400 === 0) return `${total / 86400} day${total === 86400 ? "" : "s"}`;
+  if (total % 3600 === 0) return `${total / 3600} hour${total === 3600 ? "" : "s"}`;
+  if (total % 60 === 0) return `${total / 60} minute${total === 60 ? "" : "s"}`;
+  return `${total} seconds`;
+}
+
+function openPendingModerationCase(caseId) {
+  const item = pendingModerationCases.get(caseId);
+  const dialog = document.querySelector("#pending-moderation-dialog");
+  if (!item || !dialog) return;
+
+  selectedPendingModerationCase = item;
+  document.querySelector("#pending-moderation-details").innerHTML = `
+    <div class="staff-case-title">
+      <div><h2>${escapeText(item.case_number)}</h2><p>Discord · ${escapeText(moderationActionLabel(item.action_type))}</p></div>
+      <span data-status="waiting">Awaiting appeal</span>
+    </div>
+    <div class="staff-detail-grid">
+      <article><small>Discord member</small><strong>${escapeText(item.discord_display_name || item.discord_username || "Discord member")}</strong><p>@${escapeText(item.discord_username)} · ID ${escapeText(item.discord_user_id)}</p></article>
+      <article><small>Appeal access</small><strong>${item.account_connected ? "Account connected" : item.dm_delivered ? "DM link delivered" : "DM delivery failed"}</strong><p>${item.account_connected ? "This case appears automatically after the member signs in." : item.dm_delivered ? "The member can claim this case using the secure DM link." : "The member has not received a working DM link."}</p></article>
+      <article><small>Moderation status</small><strong>${escapeText(staffStatusLabel(item.status))}</strong><p>${escapeText(moderationActionLabel(item.action_type))} · ${escapeText(staffDurationLabel(item.duration_seconds))}${item.moderator_username ? ` · Issued by @${escapeText(item.moderator_username)}` : ""}</p></article>
+      <article><small>Created</small><strong>${new Date(item.created_at).toLocaleDateString()}</strong><p>${new Date(item.created_at).toLocaleString()}</p></article>
+      <article class="wide"><small>Moderation reason</small><p>${escapeText(item.reason || "No reason recorded.")}</p></article>
+    </div>`;
+
+  document.querySelector("#pending-owner-delete-actions").hidden = currentStaffRole !== "owner";
+  const deleteButton = document.querySelector("#delete-pending-moderation-case");
+  deleteButton.disabled = false;
+  deleteButton.textContent = "Remove Awaiting Case";
+  const message = document.querySelector("#pending-delete-message");
+  message.hidden = true;
+  message.textContent = "";
+  message.classList.remove("is-error");
+  dialog.showModal();
+}
 
 async function openStaffCase(caseId) {
   const item = staffCases.get(caseId);
@@ -446,29 +529,68 @@ async function deleteSelectedArchivedAppeal() {
   await advancedLoadStaffCases();
 }
 
+async function deleteSelectedPendingModerationCase() {
+  if (currentStaffRole !== "owner" || !selectedPendingModerationCase) return;
+  const item = selectedPendingModerationCase;
+  const confirmed = window.confirm(`Permanently remove awaiting case ${item.case_number} for @${item.discord_username}? It will immediately disappear from the member’s appeal-ready list and cannot be undone.`);
+  if (!confirmed) return;
+
+  const button = document.querySelector("#delete-pending-moderation-case");
+  const message = document.querySelector("#pending-delete-message");
+  button.disabled = true;
+  button.textContent = "Removing…";
+  message.hidden = true;
+
+  const { error } = await database.rpc("delete_pending_moderation_case", {
+    p_case_id: item.id
+  });
+
+  if (error) {
+    button.disabled = false;
+    button.textContent = "Remove Awaiting Case";
+    message.textContent = cleanError(error);
+    message.classList.add("is-error");
+    message.hidden = false;
+    return;
+  }
+
+  document.querySelector("#pending-moderation-dialog")?.close();
+  selectedPendingModerationCase = null;
+  await advancedLoadStaffCases();
+}
+
 document.querySelector("#staff-results")?.addEventListener("input", (event) => {
   if (!event.target.matches("#staff-case-search")) return;
   staffSearchQuery = event.target.value.trim().toLowerCase();
-  const viewCases = staffCaseData.filter((item) => activeStaffView === "archive" ? item.status === "closed" : item.status !== "closed");
-  const visibleCases = viewCases.filter(staffCaseMatchesSearch);
+  const viewCases = activeStaffView === "waiting"
+    ? staffPendingModerationData
+    : staffCaseData.filter((item) => activeStaffView === "archive" ? item.status === "closed" : item.status !== "closed");
+  const visibleCases = viewCases.filter(activeStaffView === "waiting" ? pendingModerationCaseMatchesSearch : staffCaseMatchesSearch);
   const emptyCopy = '<div class="empty-state"><strong>No matching appeals</strong><p>Try another applicant name, username, submission number, or case number.</p></div>';
   const summary = document.querySelector("#staff-search-summary");
   const list = document.querySelector(".staff-case-list");
-  if (summary) summary.innerHTML = `Showing <strong>${visibleCases.length}</strong> of ${viewCases.length} ${activeStaffView === "archive" ? "archived" : "active"} cases.`;
-  if (list) list.innerHTML = staffCaseListMarkup(visibleCases, emptyCopy);
+  const viewLabel = activeStaffView === "waiting" ? "awaiting-appeal" : activeStaffView === "archive" ? "archived" : "active";
+  if (summary) summary.innerHTML = `Showing <strong>${visibleCases.length}</strong> of ${viewCases.length} ${viewLabel} cases.`;
+  if (list) list.innerHTML = activeStaffView === "waiting" ? pendingModerationListMarkup(visibleCases, emptyCopy) : staffCaseListMarkup(visibleCases, emptyCopy);
 });
 
 document.querySelector("#staff-results")?.addEventListener("click", (event) => {
   const viewButton = event.target.closest("[data-staff-view]");
   if (viewButton) {
-    activeStaffView = viewButton.dataset.staffView === "archive" ? "archive" : "open";
-    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${activeStaffView === "archive" ? "#archive" : ""}`);
+    activeStaffView = ["waiting", "open", "archive"].includes(viewButton.dataset.staffView) ? viewButton.dataset.staffView : "waiting";
+    const viewHash = activeStaffView === "archive" ? "#archive" : activeStaffView === "open" ? "#active" : "";
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${viewHash}`);
     renderStaffCaseQueue();
     return;
   }
   const createButton = event.target.closest("[data-create-test-ticket]");
   if (createButton) {
     createTestTicket(createButton);
+    return;
+  }
+  const pendingButton = event.target.closest("[data-open-pending-case]");
+  if (pendingButton) {
+    openPendingModerationCase(pendingButton.dataset.openPendingCase);
     return;
   }
   const button = event.target.closest("[data-open-staff-case]");
@@ -478,6 +600,7 @@ document.querySelector("#staff-case-form")?.addEventListener("submit", saveStaff
 document.querySelector("#staff-note-form")?.addEventListener("submit", addPrivateStaffNote);
 document.querySelector("#delete-test-ticket")?.addEventListener("click", deleteSelectedTestTicket);
 document.querySelector("#delete-archived-appeal")?.addEventListener("click", deleteSelectedArchivedAppeal);
+document.querySelector("#delete-pending-moderation-case")?.addEventListener("click", deleteSelectedPendingModerationCase);
 document.querySelector("#staff-case-status")?.addEventListener("change", updateStaffDecisionRequirements);
 document.querySelector("#staff-public-update")?.addEventListener("input", updateStaffDecisionRequirements);
 document.querySelector("#staff-decision-reason")?.addEventListener("input", updateStaffDecisionRequirements);
@@ -486,5 +609,11 @@ document.querySelector("[data-close-staff-dialog]")?.addEventListener("click", (
   document.querySelector("#staff-case-dialog")?.close();
 });
 document.querySelector("#staff-case-dialog")?.addEventListener("close", stopStaffHistoryRefresh);
+document.querySelector("[data-close-pending-dialog]")?.addEventListener("click", () => {
+  document.querySelector("#pending-moderation-dialog")?.close();
+});
+document.querySelector("#pending-moderation-dialog")?.addEventListener("close", () => {
+  selectedPendingModerationCase = null;
+});
 
 advancedLoadStaffCases();
