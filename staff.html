@@ -4,16 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#070a08">
-  <meta name="description" content="Protected staff review portal for ThyToxicGamer moderation appeals.">
-  <title>Staff Review | ⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</title>
+  <meta name="description" content="Protected staff review portal for ThyToxicGamer appeals and Discord tickets.">
+  <title>Appeals & Tickets Staff Review | ⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?release=1.0.53">
+  <link rel="stylesheet" href="styles.css?release=1.0.54">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
   <script src="app.js?release=1.0.51" defer></script>
   <script src="staff.js?v=20260904-4" defer></script>
+  <script src="tickets.js?v=20260904-1" defer></script>
 </head>
 <body>
   <div class="site-shell">
@@ -50,9 +51,21 @@
           <div class="loading-state">Loading secure account…</div>
         </section>
       </section>
+
+      <section class="utility-card dashboard-card staff-card ticket-center-card" aria-labelledby="ticket-center-title">
+        <div id="ticket-center-results" aria-live="polite">
+          <div class="loading-state">Loading protected ticket records…</div>
+        </div>
+      </section>
     </main>
-    <footer class="site-footer"><div class="footer-brand"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS CENTER</small></div><p>Authorized staff only.</p><span>© <b data-current-year></b></span></footer>
+    <footer class="site-footer"><div class="footer-brand"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS &amp; TICKETS CENTER</small></div><p>Authorized staff only.</p><span>© <b data-current-year></b></span></footer>
   </div>
+
+  <dialog class="staff-case-dialog ticket-record-dialog" id="ticket-record-dialog">
+    <button class="dialog-close" type="button" data-close-ticket-dialog aria-label="Close ticket record">×</button>
+    <p class="section-number">TICKET RECORD</p>
+    <div id="ticket-record-details"></div>
+  </dialog>
 
   <dialog class="staff-case-dialog" id="staff-case-dialog">
     <button class="dialog-close" type="button" data-close-staff-dialog aria-label="Close case">×</button>
