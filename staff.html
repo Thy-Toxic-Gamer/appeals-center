@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?release=1.0.51">
+  <link rel="stylesheet" href="styles.css?release=1.0.52">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
   <script src="app.js?release=1.0.51" defer></script>
-  <script src="staff.js?v=20260904-1" defer></script>
+  <script src="staff.js?v=20260904-2" defer></script>
 </head>
 <body>
   <div class="site-shell">
@@ -111,6 +111,21 @@
     <section class="staff-action-panel">
       <div class="panel-heading"><div><span>Case activity</span><small>Permanent audit trail until scheduled retention</small></div></div>
       <div class="staff-history" id="staff-activity" aria-live="polite"></div>
+    </section>
+  </dialog>
+
+  <dialog class="staff-case-dialog pending-moderation-dialog" id="pending-moderation-dialog">
+    <button class="dialog-close" type="button" data-close-pending-dialog aria-label="Close awaiting appeal case">×</button>
+    <p class="section-number">AWAITING APPEAL</p>
+    <div id="pending-moderation-details"></div>
+    <section class="pending-case-notice">
+      <strong>No appeal submitted yet</strong>
+      <p>This moderation case is available to the member, but it has not entered the formal appeal-review queue.</p>
+    </section>
+    <section class="owner-delete-actions" id="pending-owner-delete-actions" hidden>
+      <div><strong>Owner pending-case control</strong><p>Permanently remove this case. It will immediately disappear from the member’s appeal-ready case list.</p></div>
+      <button class="button button-danger" type="button" id="delete-pending-moderation-case">Remove Awaiting Case</button>
+      <p class="staff-form-message" id="pending-delete-message" hidden></p>
     </section>
   </dialog>
 </body>
