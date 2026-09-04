@@ -17,10 +17,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="preload" as="image" href="assets/appeals-center-hero.webp" fetchpriority="high">
-  <link rel="stylesheet" href="styles.css?release=1.0.48">
+  <link rel="stylesheet" href="styles.css?release=1.0.49">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
-  <script src="app.js" defer></script>
+  <script src="app.js?release=1.0.49" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to Appeals Center</a>
@@ -83,6 +83,17 @@
             <button class="text-button" type="button" data-sign-out>Sign out</button>
           </div>
           <p class="auth-message" data-auth-message hidden></p>
+        </section>
+
+        <section class="linked-cases-panel" id="linked-moderation-cases" aria-labelledby="linked-cases-title" hidden>
+          <div class="linked-cases-heading">
+            <div>
+              <p class="section-number">DISCORD MODERATION</p>
+              <h3 id="linked-cases-title">Your appeal-ready cases</h3>
+            </div>
+            <p>Select a case to open an appeal with its details already filled in.</p>
+          </div>
+          <div class="linked-case-results" id="moderation-case-results" aria-live="polite"></div>
         </section>
 
         <form class="appeal-form" id="appeal-form" data-auth-required novalidate>
