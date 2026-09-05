@@ -92,7 +92,9 @@ begin
   if public.current_staff_role() is distinct from 'owner' then
     raise exception 'Only the Owner can permanently clear TTS records.';
   end if;
-  delete from public.tts_records;
+  -- Keep an explicit predicate so Supabase's destructive-query guard permits
+  -- the Owner-only clear operation while still selecting every record.
+  delete from public.tts_records where id is not null;
   get diagnostics deleted_count = row_count;
   return jsonb_build_object('deleted', true, 'count', deleted_count);
 end;
