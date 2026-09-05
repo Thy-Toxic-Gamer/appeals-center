@@ -177,7 +177,9 @@ function renderAuth(session) {
   loadSubmissionBlockStatus();
   if (document.querySelector("#linked-moderation-cases")) loadModerationCases();
   if (document.querySelector("#status-results")) loadApplicantCases();
-  if (document.querySelector("#staff-results")) loadStaffCases();
+  // staff.js owns the full staff dashboard. Avoid starting the legacy list in
+  // parallel, because a slower cached response can overwrite the Owner tools.
+  if (document.querySelector("#staff-results") && !document.querySelector('script[src^="staff.js"]')) loadStaffCases();
 }
 
 async function loadSubmissionBlockStatus() {
