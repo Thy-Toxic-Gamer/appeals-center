@@ -172,7 +172,7 @@ async function advancedLoadStaffCases() {
     return;
   }
   if (!role) {
-    results.innerHTML = '<div class="empty-state"><strong>Account verified—staff access not assigned</strong><p>This account is not yet on the Appeals Center staff list.</p></div>';
+    results.innerHTML = '<div class="empty-state"><strong>Account verified—staff access not assigned</strong><p>This account is not yet on the Appeals, Tickets & TTS Records Center staff list.</p></div>';
     loadSubmissionAccessRecords();
     return;
   }
