@@ -461,6 +461,7 @@ async function loadSubmissionAccessRecords() {
         <b data-status="${escapeText(review.status)}">${escapeText(staffStatusLabel(review.status))}</b>
       </summary>
       <div class="submission-review-body">
+        ${currentStaffRole === "owner" && review.status === "closed" ? `<div class="owner-archive-control"><p>Permanently delete this archived review and its website transcript. Submission blocks, audit history, and Discord threads are kept.</p><button type="button" class="button button-danger" data-delete-block-review="${escapeText(review.id)}" data-review-number="${escapeText(review.review_number)}">Delete Review Permanently</button><p class="staff-form-message" role="status" data-review-delete-message hidden></p></div>` : ""}
         <p><strong>Opening request:</strong> ${escapeText(review.opening_message)}</p>
         ${review.resolution ? `<p><strong>Resolution:</strong> ${escapeText(review.resolution)}</p>` : ""}
         <div class="submission-review-transcript">
@@ -494,6 +495,35 @@ async function loadSubmissionAccessRecords() {
       ${reviewMarkup(closedReviews, "No archived block reviews")}
     </section>`;
 }
+
+async function deleteArchivedBlockReview(button) {
+  if (currentStaffRole !== "owner") return;
+  const reviewId = button.dataset.deleteBlockReview;
+  const reviewNumber = button.dataset.reviewNumber;
+  if (!reviewId || !window.confirm(`Permanently delete private review ${reviewNumber} and its website transcript? This cannot be undone. Submission blocks, audit history, and Discord threads will be kept.`)) return;
+  const message = button.parentElement.querySelector("[data-review-delete-message]");
+  button.disabled = true;
+  button.textContent = "Deleting…";
+  message.hidden = true;
+  try {
+    const { data, error } = await database.rpc("delete_archived_block_review", { p_review_id: reviewId });
+    if (error) throw error;
+    if (!data?.deleted) throw new Error("The review was not deleted. Refresh and try again.");
+    await loadSubmissionAccessRecords();
+  } catch (error) {
+    message.textContent = cleanError(error);
+    message.classList.add("is-error");
+    message.hidden = false;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Delete Review Permanently";
+  }
+}
+
+document.querySelector("#submission-access-results")?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-delete-block-review]");
+  if (button) deleteArchivedBlockReview(button);
+});
 
 async function addPrivateStaffNote(event) {
   event.preventDefault();
