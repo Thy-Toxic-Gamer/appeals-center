@@ -100,7 +100,7 @@
     target.innerHTML = '<div class="loading-state">Loading protected ticket records…</div>';
     const { data: role, error: roleError } = await database.rpc("current_staff_role");
     if (roleError || !["moderator", "admin", "owner"].includes(role)) {
-      target.innerHTML = '<div class="empty-state"><strong>Staff access required</strong><p>Sign in with an account assigned to the Appeals & Tickets Center staff list.</p></div>';
+      target.innerHTML = '<div class="empty-state"><strong>Staff access required</strong><p>Sign in with an account assigned to the Appeals, Tickets & TTS Records Center staff list.</p></div>';
       return;
     }
     const { data, error } = await database
