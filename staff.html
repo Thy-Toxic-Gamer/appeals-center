@@ -4,22 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#070a08">
-  <meta name="description" content="Protected staff review portal for ThyToxicGamer appeals and Discord tickets.">
-  <title>Appeals & Tickets Staff Review | ⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</title>
+  <meta name="description" content="Protected staff review portal for ThyToxicGamer appeals, Discord tickets, and TTS records.">
+  <title>Appeals, Tickets & TTS Staff Review | ⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?release=1.0.55">
+  <link rel="stylesheet" href="styles.css?release=1.0-20260905">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
-  <script src="app.js?release=1.0.54" defer></script>
+  <script src="app.js?release=1.0-20260905" defer></script>
   <script src="staff.js?v=20260905-9" defer></script>
   <script src="tickets.js?v=20260904-3" defer></script>
+  <script src="tts-records.js?v=20260905-1" defer></script>
 </head>
 <body>
   <div class="site-shell">
     <header class="site-header ecosystem-header">
-      <div class="brand ecosystem-brand"><a class="ecosystem-brand-home" href="index.html"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong></a><small>APPEALS &amp; TICKETS CENTER <span>·</span> <a class="brand-hub" href="https://thy-toxic-gamer.github.io/central-command/">CENTRAL COMMAND</a></small></div>
+      <div class="brand ecosystem-brand"><a class="ecosystem-brand-home" href="index.html"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong></a><small>APPEALS, TICKETS &amp; TTS RECORDS <span>·</span> <a class="brand-hub" href="https://thy-toxic-gamer.github.io/central-command/">CENTRAL COMMAND</a></small></div>
       <nav class="ecosystem-nav" aria-label="Primary navigation"><a href="index.html">Submit Appeal</a><a href="status.html">Check Status</a><a href="staff.html" aria-current="page">Staff Review</a></nav>
     </header>
     <main class="dashboard-page">
@@ -67,14 +68,26 @@
           <div class="loading-state">Loading protected ticket records…</div>
         </div>
       </section>
+
+      <section class="utility-card dashboard-card staff-card tts-records-card" aria-label="TTS Records">
+        <div id="tts-records-results" aria-live="polite">
+          <div class="loading-state">Loading protected TTS records…</div>
+        </div>
+      </section>
     </main>
-    <footer class="site-footer"><div class="footer-brand"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS &amp; TICKETS CENTER</small></div><p>Authorized staff only.</p><span>© <b data-current-year></b></span></footer>
+    <footer class="site-footer"><div class="footer-brand"><strong>⁅𝐓𝐡𝐲𝐓☣︎𝐱𝐢𝐜𝐆𝐚𝐦𝐞𝐫⁆</strong><small>APPEALS, TICKETS &amp; TTS RECORDS</small></div><p>Authorized staff only.</p><span>© <b data-current-year></b></span></footer>
   </div>
 
   <dialog class="staff-case-dialog ticket-record-dialog" id="ticket-record-dialog">
     <button class="dialog-close" type="button" data-close-ticket-dialog aria-label="Close ticket record">×</button>
     <p class="section-number">TICKET RECORD</p>
     <div id="ticket-record-details"></div>
+  </dialog>
+
+  <dialog class="staff-case-dialog ticket-record-dialog" id="tts-record-dialog">
+    <button class="dialog-close" type="button" data-close-tts-dialog aria-label="Close TTS record">×</button>
+    <p class="section-number">TTS RECORD</p>
+    <div id="tts-record-details"></div>
   </dialog>
 
   <dialog class="staff-case-dialog" id="staff-case-dialog">
