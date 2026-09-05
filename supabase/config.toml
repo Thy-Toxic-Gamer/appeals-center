@@ -1,2 +1,5 @@
 [functions.discord-appeal-events]
 verify_jwt = false
+
+[functions.tts-records]
+verify_jwt = false
