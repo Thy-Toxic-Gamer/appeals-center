@@ -17,6 +17,9 @@
       const statusMatch = statusView === "all" || record.status === statusView;
       const searchMatch = !searchValue || [
         record.queue_number,
+        `#${record.queue_number}`,
+        `TTS#${record.queue_number}`,
+        `TTS #${record.queue_number}`,
         typeLabels[record.tts_type],
         record.status,
         record.status_note,
