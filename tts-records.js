@@ -94,7 +94,7 @@
     target.innerHTML = '<div class="loading-state">Loading protected TTS records…</div>';
     const { data: role, error: roleError } = await database.rpc("current_staff_role");
     if (roleError || !["moderator", "admin", "owner"].includes(role)) {
-      target.innerHTML = '<div class="empty-state"><strong>Staff access required</strong><p>Sign in with an approved Appeals Center staff account.</p></div>';
+      target.innerHTML = '<div class="empty-state"><strong>Staff access required</strong><p>Sign in with an approved Appeals, Tickets & TTS Records Center staff account.</p></div>';
       return;
     }
     staffRole = role;
