@@ -468,6 +468,34 @@ input::placeholder, textarea::placeholder { color: #657069; }
   .ticket-status-tabs button, .ticket-type-tabs button { flex: 1 1 auto; }
 }
 
+/* Protected TTS Records — Ver. 1.0 */
+.tts-records-card { margin-top: 1.5rem; }
+.tts-records-heading { align-items: flex-start; }
+.tts-record-actions { display: flex; flex-wrap: wrap; gap: .65rem; justify-content: flex-end; }
+.tts-status-tabs { margin: .2rem 0 1rem; }
+.tts-record-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+.tts-record-card {
+  appearance: none; width: 100%; display: grid; gap: .7rem; text-align: left;
+  border: 1px solid #294632; border-left: 4px solid #a8f000; border-radius: 4px;
+  background: #0a120d; color: #edf8f0; padding: 1rem; cursor: pointer;
+}
+.tts-record-card:hover, .tts-record-card:focus-visible { border-color: #a8f000; transform: translateY(-1px); }
+.tts-record-card.tts-type-bits { border-left-color: #ff3e98; }
+.tts-record-card.tts-type-donations { border-left-color: #696cff; }
+.tts-record-heading { display: flex; align-items: center; gap: .75rem; }
+.tts-record-heading div { display: grid; gap: .2rem; flex: 1; }
+.tts-record-heading strong { color: #b9ff42; }
+.tts-record-heading small, .tts-record-card > small, .tts-record-card time { color: #9cac9f; }
+.tts-record-heading em { color: #91e6aa; font-style: normal; font-size: .8rem; }
+.tts-record-card p { margin: 0; color: #dce9df; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.tts-record-card time { font-size: .78rem; }
+.tts-transcript-panel pre { min-height: 150px; }
+@media (max-width: 760px) {
+  .tts-record-grid { grid-template-columns: 1fr; }
+  .tts-record-actions { justify-content: stretch; }
+  .tts-record-actions .button { flex: 1 1 auto; }
+}
+
 
 .submission-block-notice {
   margin: 0 0 24px;
